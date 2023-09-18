@@ -2,23 +2,28 @@ cmake_minimum_required(VERSION 3.10)
 
 project(SGEMM)
 
-add_subdirectory(sgemm)
+find_package(Boost COMPONENTS program_options REQUIRED)
+
+add_subdirectory(sgemm_runner)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD REQUIRED)
 set(CMAKE_CUDA_STANDARD 17)
-set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+set(CUBLAS_LIBRARIES -lcublas)
 
 enable_language(CUDA)
 
-add_executable(main main.cu)
+add_executable(main src/main.cu src/parse_cmdline.cu)
 set_target_properties(main PROPERTIES CUDA_ARCHITECTURES "80")
 target_include_directories(main PUBLIC
-    $PROJECT_SOURCE_DIR/sgemm/include
-    $PROJECT_SOURCE_DIR/cutlass/include
-    $PROJECT_SOURCE_DIR/cutlass/tools/util/include
-    $PROJECT_SOURCE_DIR/cutlass/tools/library/include
-    $PROJECT_SOURCE_DIR/cutlass/examples/common
+    ./include
+    ./sgemm_runner/include
+    ./cutlass/include
+    ./cutlass/tools/util/include
+    ./cutlass/tools/library/include
+    ./cutlass/examples/common
+    ${Boost_INCLUDE_DIR}
 )
-target_link_libraries(main PUBLIC sgemm)
+target_link_libraries(main PUBLIC sgemm_runner)
+target_link_libraries(main PUBLIC ${CUBLAS_LIBRARIES})
+target_link_libraries(main PUBLIC ${Boost_LIBRARIES})
 target_compile_options(main PUBLIC -pg -G)

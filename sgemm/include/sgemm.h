@@ -1,1 +1,0 @@
-void sgemm(int M, int N, int K, float alpha, float beta);
