@@ -1,4 +1,5 @@
 #include <boost/program_options.hpp>
+#include <cutlass/numeric_types.h>
 #include <iostream>
 
 #include <parse_cmdline.h>
@@ -8,16 +9,16 @@ namespace po = boost::program_options;
 static constexpr int DEFAULT_M = 8;
 static constexpr int DEFAULT_N = 8;
 static constexpr int DEFAULT_K = 8;
-static constexpr float DEFAULT_ALPHA = 0.0;
-static constexpr float DEFAULT_BETA = 0.0;
+static const float DEFAULT_ALPHA = 1.0f;
+static const float DEFAULT_BETA = 0.0f;
 // constexpr unsigned long long FLOAT_OPERATIONS = 2ULL * M * N * K;
 static constexpr unsigned int DEFAULT_ITERATIONS = 100U;
 static constexpr float DEFAULT_ERROR_MARGIN = 0.01;
 static constexpr bool DEFAULT_PRINT_MATRICES = false;
 
-int M;
-int N;
-int K;
+int m;
+int n;
+int k;
 float ALPHA;
 float BETA;
 unsigned int ITERATIONS;
@@ -30,11 +31,11 @@ void parse_cmdline_options(int ac, char **av)
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help", "display this help message")
-            ("M", po::value<int>(&M)->default_value(DEFAULT_M),
+            ("M", po::value<int>(&m)->default_value(DEFAULT_M),
                     "number of rows in matrices A and C")
-            ("N", po::value<int>(&N)->default_value(DEFAULT_N),
+            ("N", po::value<int>(&n)->default_value(DEFAULT_N),
                     "number of columns in matrices B and C")
-            ("K", po::value<int>(&K)->default_value(DEFAULT_K),
+            ("K", po::value<int>(&k)->default_value(DEFAULT_K),
                     "number of columns in matrix A and number of rows in matrix B")
             ("alpha", po::value<float>(&ALPHA)->default_value(DEFAULT_ALPHA),
                     "alpha")
@@ -58,7 +59,7 @@ void parse_cmdline_options(int ac, char **av)
         }
 
         std::cout << std::endl << "Configuration:" << std::endl;
-        std::cout << "\tM = " << M << ", N = " << N << ", K = " << K << std::endl;
+        std::cout << "\tM = " << m << ", N = " << n << ", K = " << k << std::endl;
         std::cout << "\tAlpha = " << ALPHA << ", Beta = " << BETA << std::endl;
         std::cout << "\tIterations: " << ITERATIONS << std::endl;
         // std::cout << "\tError Margin: " << ERROR_MARGIN << std::endl;

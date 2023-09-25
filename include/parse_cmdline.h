@@ -1,6 +1,6 @@
-extern int M;
-extern int N;
-extern int K;
+extern int m;
+extern int n;
+extern int k;
 extern float ALPHA;
 extern float BETA;
 extern unsigned int ITERATIONS;

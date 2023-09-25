@@ -22,6 +22,7 @@ target_include_directories(main PUBLIC
     ./cutlass/tools/library/include
     ./cutlass/examples/common
     ${Boost_INCLUDE_DIR}
+    ${CUDA_INCLUDE_DIRS}
 )
 target_link_libraries(main PUBLIC sgemm_runner)
 target_link_libraries(main PUBLIC ${CUBLAS_LIBRARIES})

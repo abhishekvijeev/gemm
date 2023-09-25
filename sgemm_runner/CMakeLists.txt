@@ -3,7 +3,12 @@ set(CMAKE_CXX_STANDARD REQUIRED)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 
-add_library(sgemm_runner SHARED src/runner.cu)
+file(GLOB_RECURSE KERNEL_SOURCES "src/kernels/*.cu")
+
+add_library(sgemm_runner SHARED 
+    src/runner.cu 
+    src/kernels/kernel1_naive.cu
+)
 set_target_properties(sgemm_runner PROPERTIES CUDA_ARCHITECTURES "80")
 target_include_directories(sgemm_runner PUBLIC
     ./include/sgemm_runner
