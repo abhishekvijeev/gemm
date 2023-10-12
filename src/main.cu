@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     }
     timer.stop();
     expt_time_s = timer.elapsed_millis() / 1000;
-    printf("Expt: %.2f GFlops\n", (ITERATIONS * flops * 1e-9) / expt_time_s);
+    printf("Expt: %.2f GFlops/s\n", (ITERATIONS * flops * 1e-9) / expt_time_s);
 
     CUBLAS_CHECK(cublasCreate_v2(&handle));
     CUBLAS_CHECK(cublasSgemm_v2(handle,
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
     timer.stop();
     ref_time_s = timer.elapsed_millis() / 1000.0;
     C_reference.sync_host();
-    printf("Ref: %.2f GFlops\n", (ITERATIONS * flops * 1e-9) / ref_time_s);
+    printf("Ref: %.2f GFlops/s\n", (ITERATIONS * flops * 1e-9) / ref_time_s);
 
     // Compare reference to computed results.
     if (!cutlass::reference::host::TensorEquals(

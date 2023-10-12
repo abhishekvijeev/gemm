@@ -17,6 +17,7 @@ target_include_directories(sgemm_runner PUBLIC
     ../cutlass/tools/library/include
     ../cutlass/examples/common
 )
+target_compile_options(sgemm_runner PUBLIC -pg -G)
 
 # -O3 -DNDEBUG -Xcompiler=-fPIE   -DCUTLASS_ENABLE_TENSOR_CORE_MMA=1  -Xcompiler=-Wconversion -Xcompiler=-fno-strict-aliasing -gencode=arch=compute_80,code=[sm_80,compute_80]
 
