@@ -1,4 +1,6 @@
 #include <cublas_v2.h>
+#include <cuda_runtime.h>
+
 #include <cutlass/gemm/device/gemm.h>
 #include <cutlass/matrix_coord.h>
 #include <cutlass/numeric_types.h>
@@ -15,8 +17,37 @@
 #include <iostream>
 
 #include <parse_cmdline.h>
+#include <runner.h>
 #include <util.h>
-#include <sgemm_runner/runner.h>
+
+void run_kernel(
+    int kernel_num,
+    cudaDeviceProp *prop,
+    float *A,
+    float *B,
+    float *C,
+    int M,
+    int N,
+    int K,
+    float alpha,
+    float beta
+)
+{
+    size_t shmem_per_sm = prop->sharedMemPerMultiprocessor;
+    switch (kernel_num) {
+        case 1:
+            run_sgemm_naive(A, B, C, m, n, k, ALPHA, BETA);
+            break;
+
+        case 2:
+            run_sgemm_shmem(A, B, C, m, n, k, ALPHA, BETA, shmem_per_sm);
+            break;
+
+        default:
+            printf("Invalid kernel number - [1-2] allowed\n");
+            break;
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -30,6 +61,11 @@ int main(int argc, char **argv)
     uint64_t flops;
     double expt_time_s, ref_time_s;
     cublasHandle_t handle;
+    int device;
+    cudaDeviceProp prop;
+
+    CUDA_CHECK(cudaGetDevice(&device));
+    CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
 
     flops = 2 * ((uint64_t)m * n * k) + ((uint64_t)m * n);
     // Gaussian random distribution
@@ -77,13 +113,14 @@ int main(int argc, char **argv)
     B.sync_host();
     C_expt.sync_host();
 
+    int kernel_num = 2;
     // Discard first iteration
-    run_sgemm_naive(A.device_data(), B.device_data(), C_expt.device_data(), m, n, k, ALPHA, BETA);
+    run_kernel(kernel_num, &prop, A.device_data(), B.device_data(), C_expt.device_data(), m, n, k, ALPHA, BETA);
     C_expt.sync_host();
 
     timer.start();
     for (int i = 0; i < ITERATIONS; i++) {
-        run_sgemm_naive(A.device_data(), B.device_data(), C_expt.device_data(), m, n, k, ALPHA, BETA);
+        run_kernel(kernel_num, &prop, A.device_data(), B.device_data(), C_expt.device_data(), m, n, k, ALPHA, BETA);
     }
     timer.stop();
     expt_time_s = timer.elapsed_millis() / 1000;

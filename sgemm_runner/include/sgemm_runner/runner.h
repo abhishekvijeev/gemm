@@ -1,1 +1,0 @@
-void run_sgemm_naive(float *A, float *B, float *C, int M, int N, int K, float alpha, float beta);
