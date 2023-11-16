@@ -38,27 +38,27 @@
 
 #define TILE_WIDTH 16
 
-__global__ void kernel2_shmem(float *A, float *B, float *C, int M, int N, int K, float alpha, float beta)
+__global__ void kernel2_shmem(float *A, float *B, float *C, int DIM, float alpha, float beta)
 {
     int tidx = threadIdx.x, tidy = threadIdx.y;
     int bidx = blockIdx.x, bidy = blockIdx.y;
     int row = bidy * TILE_WIDTH + tidy;
     int col = bidx * TILE_WIDTH + tidx;
-    int num_phases = M / TILE_WIDTH;
-    float val = 0;
+    int num_phases = DIM / TILE_WIDTH;
+    float sum = 0;
 
     __shared__ float tileA[TILE_WIDTH][TILE_WIDTH];
     __shared__ float tileB[TILE_WIDTH][TILE_WIDTH];
 
     for (int phase = 0; phase < num_phases; phase++) {
-        tileA[tidy][tidx] = A[row * N + phase * TILE_WIDTH + tidx];
-        tileB[tidy][tidx] = B[(phase * TILE_WIDTH + tidy) * K + col];
+        tileA[tidy][tidx] = A[row * DIM + phase * TILE_WIDTH + tidx];
+        tileB[tidy][tidx] = B[(phase * TILE_WIDTH + tidy) * DIM + col];
         __syncthreads();
 
         for (int k = 0; k < TILE_WIDTH; k++) {
-            val += tileA[tidy][k] * tileB[k][tidx];
+            sum += tileA[tidy][k] * tileB[k][tidx];
         }
         __syncthreads();
     }
-    C[row * N + col] = val;
+    C[row * DIM + col] = sum;
 }

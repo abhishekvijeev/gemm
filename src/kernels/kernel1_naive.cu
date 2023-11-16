@@ -39,7 +39,7 @@
  * compute-to-global-memory-access ratio only 1.0, which leads to severe
  * under-utilization of the peak execution speed of modern GPUs.
  */
-__global__ void kernel1_naive(float *A, float *B, float *C, int M, int N, int K, float alpha, float beta)
+__global__ void kernel1_naive(float *A, float *B, float *C, int DIM, float alpha, float beta)
 {
     // This thread computes C[row][col] = alpha * (A[row] dot B[col]) + beta * C[row][col]
     // where A[row] is a row vector and B[col] is a column vector
@@ -47,11 +47,11 @@ __global__ void kernel1_naive(float *A, float *B, float *C, int M, int N, int K,
     int col = blockDim.x * blockIdx.x + threadIdx.x;
     float acc = 0.0;
 
-    if (row < N && col < M) {
-        for (int i = 0; i < K; i++) {
+    if (row < DIM && col < DIM) {
+        for (int i = 0; i < DIM; i++) {
             // A[row][i] * B[i][col]
-            acc += A[row * K + i] * B[i * N + col];
+            acc += A[row * DIM + i] * B[i * DIM + col];
         }
-        C[row * N + col] = alpha * acc + beta * C[row * N + col];
+        C[row * DIM + col] = alpha * acc + beta * C[row * DIM + col];
     }
 }

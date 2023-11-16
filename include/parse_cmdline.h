@@ -1,10 +1,8 @@
-extern int m;
-extern int n;
-extern int k;
+extern int DIM;
 extern float ALPHA;
 extern float BETA;
 extern unsigned int ITERATIONS;
-extern float ERROR_MARGIN;
+extern int KERNEL;
 extern bool PRINT_MATRICES;
 
 void parse_cmdline_options(int ac, char **av);

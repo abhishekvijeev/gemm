@@ -26,9 +26,7 @@ void run_kernel(
     float *A,
     float *B,
     float *C,
-    int M,
-    int N,
-    int K,
+    int DIM,
     float alpha,
     float beta
 )
@@ -36,11 +34,11 @@ void run_kernel(
     // size_t shmem_per_block = prop->sharedMemPerBlock;
     switch (kernel_num) {
         case 1:
-            run_sgemm_naive(A, B, C, m, n, k, ALPHA, BETA);
+            run_sgemm_naive(A, B, C, DIM, ALPHA, BETA);
             break;
 
         case 2:
-            run_sgemm_shmem(A, B, C, m, n, k, ALPHA, BETA);
+            run_sgemm_shmem(A, B, C, DIM, ALPHA, BETA);
             break;
 
         default:
@@ -52,10 +50,10 @@ void run_kernel(
 int main(int argc, char **argv)
 {
     parse_cmdline_options(argc, argv);
-    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> A(cutlass::MatrixCoord(m, k));
-    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> B(cutlass::MatrixCoord(k, n));
-    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> C_expt(cutlass::MatrixCoord(m, n));
-    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> C_reference(cutlass::MatrixCoord(m, n));
+    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> A(cutlass::MatrixCoord(DIM, DIM));
+    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> B(cutlass::MatrixCoord(DIM, DIM));
+    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> C_expt(cutlass::MatrixCoord(DIM, DIM));
+    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> C_reference(cutlass::MatrixCoord(DIM, DIM));
     GpuTimer timer;
     uint64_t seed;
     uint64_t flops;
@@ -67,7 +65,7 @@ int main(int argc, char **argv)
     CUDA_CHECK(cudaGetDevice(&device));
     CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
 
-    flops = 2 * ((uint64_t)m * n * k) + ((uint64_t)m * n);
+    flops = 2 * ((uint64_t)DIM * DIM * DIM) + ((uint64_t)DIM * DIM);
     // Gaussian random distribution
     float mean = 0.0_hf;
     float stddev = 5.0_hf;
@@ -113,14 +111,13 @@ int main(int argc, char **argv)
     B.sync_host();
     C_expt.sync_host();
 
-    int kernel_num = 1;
     // Discard first iteration
-    run_kernel(kernel_num, &prop, A.device_data(), B.device_data(), C_expt.device_data(), m, n, k, ALPHA, BETA);
+    run_kernel(KERNEL, &prop, A.device_data(), B.device_data(), C_expt.device_data(), DIM, ALPHA, BETA);
     C_expt.sync_host();
 
     timer.start();
     for (int i = 0; i < ITERATIONS; i++) {
-        run_kernel(kernel_num, &prop, A.device_data(), B.device_data(), C_expt.device_data(), m, n, k, ALPHA, BETA);
+        run_kernel(KERNEL, &prop, A.device_data(), B.device_data(), C_expt.device_data(), DIM, ALPHA, BETA);
     }
     timer.stop();
     expt_time_s = timer.elapsed_millis() / 1000;
@@ -130,24 +127,24 @@ int main(int argc, char **argv)
     CUBLAS_CHECK(cublasSgemm_v2(handle,
                     CUBLAS_OP_N,
                     CUBLAS_OP_N,
-                    m, n, k,
+                    DIM, DIM, DIM,
                     &ALPHA,
-                    A.device_data(), k,
-                    B.device_data(), n,
+                    A.device_data(), DIM,
+                    B.device_data(), DIM,
                     &BETA,
-                    C_reference.device_data(), n));
+                    C_reference.device_data(), DIM));
 
     timer.start();
     for (int i = 0; i < ITERATIONS; i++) {
         CUBLAS_CHECK(cublasSgemm_v2(handle,
                     CUBLAS_OP_N,
                     CUBLAS_OP_N,
-                    m, n, k,
+                    DIM, DIM, DIM,
                     &ALPHA,
-                    A.device_data(), k,
-                    B.device_data(), n,
+                    A.device_data(), DIM,
+                    B.device_data(), DIM,
                     &BETA,
-                    C_reference.device_data(), n));
+                    C_reference.device_data(), DIM));
     }
     timer.stop();
     ref_time_s = timer.elapsed_millis() / 1000.0;
