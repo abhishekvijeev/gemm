@@ -29,4 +29,4 @@ target_include_directories(main PUBLIC
 )
 target_link_libraries(main PUBLIC ${CUBLAS_LIBRARIES})
 target_link_libraries(main PUBLIC ${Boost_LIBRARIES})
-target_compile_options(main PUBLIC -pg -G)
+# target_compile_options(main PUBLIC -pg -G)
