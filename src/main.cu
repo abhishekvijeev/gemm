@@ -31,14 +31,14 @@ void run_kernel(
     float beta
 )
 {
-    // size_t shmem_per_block = prop->sharedMemPerBlock;
+    size_t max_shmem_per_block = prop->sharedMemPerBlock;
     switch (kernel_num) {
         case 1:
             run_sgemm_naive(A, B, C, DIM, ALPHA, BETA);
             break;
 
         case 2:
-            run_sgemm_shmem(A, B, C, DIM, ALPHA, BETA);
+            run_sgemm_shmem(A, B, C, DIM, ALPHA, BETA, max_shmem_per_block);
             break;
 
         default:

@@ -13,5 +13,6 @@ void run_sgemm_shmem(
     float *C,
     int DIM,
     float alpha,
-    float beta
+    float beta,
+    size_t max_shmem_per_block
 );
