@@ -33,14 +33,14 @@ void run_kernel(
     float beta
 )
 {
-    size_t shmem_per_sm = prop->sharedMemPerMultiprocessor;
+    // size_t shmem_per_block = prop->sharedMemPerBlock;
     switch (kernel_num) {
         case 1:
             run_sgemm_naive(A, B, C, m, n, k, ALPHA, BETA);
             break;
 
         case 2:
-            run_sgemm_shmem(A, B, C, m, n, k, ALPHA, BETA, shmem_per_sm);
+            run_sgemm_shmem(A, B, C, m, n, k, ALPHA, BETA);
             break;
 
         default:
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     B.sync_host();
     C_expt.sync_host();
 
-    int kernel_num = 2;
+    int kernel_num = 1;
     // Discard first iteration
     run_kernel(kernel_num, &prop, A.device_data(), B.device_data(), C_expt.device_data(), m, n, k, ALPHA, BETA);
     C_expt.sync_host();

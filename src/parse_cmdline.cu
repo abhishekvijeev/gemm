@@ -41,7 +41,7 @@ void parse_cmdline_options(int ac, char **av)
                     "alpha")
             ("beta", po::value<float>(&BETA)->default_value(DEFAULT_BETA),
                     "beta")
-            ("iter", po::value<unsigned int>(&ITERATIONS)->default_value(DEFAULT_ITERATIONS),
+            ("iterations", po::value<unsigned int>(&ITERATIONS)->default_value(DEFAULT_ITERATIONS),
                     "number of iterations to execute")
             ("err-margin", po::value<float>(&ERROR_MARGIN)->default_value(DEFAULT_ERROR_MARGIN),
                     "floating point error margin for correctness verification")

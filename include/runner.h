@@ -17,6 +17,5 @@ void run_sgemm_shmem(
     int N,
     int K,
     float alpha,
-    float beta,
-    size_t shmem_per_sm
+    float beta
 );
