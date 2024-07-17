@@ -8,6 +8,10 @@ Each data-parallel algorithm, henceforth referred to as a "kernel", has been imp
 ## Build
 
 ```
+apt install libboost-program-options-dev
+
+git submodule update --init --recursive
+
 mkdir build
 cd build
 cmake ../

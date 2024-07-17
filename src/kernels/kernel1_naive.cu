@@ -36,7 +36,7 @@
  * an element of A, and the other fetches an element of B. One floating-point
  * operation multiplies the elements fetched from A and B, and the other
  * accumulates the product into C_acc. Thus, the loop has a
- * compute-to-global-memory-access ratio only 1.0, which leads to severe
+ * compute-to-global-memory-access ratio of only 1.0, which leads to severe
  * under-utilization of the peak execution speed of modern GPUs.
  */
 __global__ void kernel1_naive(float *A, float *B, float *C, int DIM, float alpha, float beta)
