@@ -42,8 +42,9 @@ void run_sgemm_shmem(
     // The SGEMM tiled matrix multiplication algorithm requires each
     // thread within a thread block to load one element from input
     // matrix A and one element from input matrix B to shared memory.
-    // Therefore, the amount of shared memory used per thread is:
-    // 2 * sizeof(element)
+    // Here, we assume that A and B are square matrices of the same
+    // size. Therefore, the amount of shared memory used per thread
+    // is equal to 2 * sizeof(element)
     size_t shmem_per_thread = 2 * sizeof(A);
 
     // We assume the simple case where the thread block dimensions
@@ -56,5 +57,20 @@ void run_sgemm_shmem(
     dim3 grid_dim((DIM + block_dim.x - 1) / block_dim.x, (DIM + block_dim.y - 1) / block_dim.y);
 
     kernel2_shmem<<<grid_dim, block_dim, shmem_per_block>>>(A, B, C, DIM, alpha, beta, block_dim.y, block_dim.x);
+    CUDA_CHECK(cudaGetLastError());
+}
+
+void run_gemm_thread_coarsen_row(
+    float *A,
+    float *B,
+    float *C, 
+    int DIM,
+    float alpha,
+    float beta
+)
+{
+    dim3 block_dim(32, 32);
+    dim3 grid_dim((DIM + block_dim.x - 1) / block_dim.x, (DIM + block_dim.y - 1) / block_dim.y);
+    kernel3_thread_coarsen_row<<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }

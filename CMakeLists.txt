@@ -16,6 +16,7 @@ add_executable(main
     src/runner.cu
     src/kernels/kernel1_naive.cu
     src/kernels/kernel2_shmem.cu
+    src/kernels/kernel3_thread_coarsen_row.cu
 )
 set_target_properties(main PROPERTIES CUDA_ARCHITECTURES "80")
 target_include_directories(main PUBLIC

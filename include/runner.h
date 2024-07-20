@@ -16,3 +16,12 @@ void run_sgemm_shmem(
     float beta,
     size_t max_shmem_per_block
 );
+
+void run_gemm_thread_coarsen_row(
+    float *A,
+    float *B,
+    float *C, 
+    int DIM,
+    float alpha,
+    float beta
+);

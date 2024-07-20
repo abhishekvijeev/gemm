@@ -41,8 +41,12 @@ void run_kernel(
             run_sgemm_shmem(A, B, C, DIM, ALPHA, BETA, max_shmem_per_block);
             break;
 
+        case 3:
+            run_gemm_thread_coarsen_row(A, B, C, DIM, ALPHA, BETA);
+            break;
+
         default:
-            printf("Invalid kernel number - [1-2] allowed\n");
+            printf("Invalid kernel number - [1-3] allowed\n");
             break;
     }
 }
