@@ -54,10 +54,10 @@ void run_kernel(
 int main(int argc, char **argv)
 {
     parse_cmdline_options(argc, argv);
-    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> A(cutlass::MatrixCoord(DIM, DIM));
-    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> B(cutlass::MatrixCoord(DIM, DIM));
-    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> C_expt(cutlass::MatrixCoord(DIM, DIM));
-    cutlass::HostTensor<float, cutlass::layout::ColumnMajor> C_reference(cutlass::MatrixCoord(DIM, DIM));
+    cutlass::HostTensor<float, cutlass::layout::RowMajor> A(cutlass::MatrixCoord(DIM, DIM));
+    cutlass::HostTensor<float, cutlass::layout::RowMajor> B(cutlass::MatrixCoord(DIM, DIM));
+    cutlass::HostTensor<float, cutlass::layout::RowMajor> C_expt(cutlass::MatrixCoord(DIM, DIM));
+    cutlass::HostTensor<float, cutlass::layout::RowMajor> C_reference(cutlass::MatrixCoord(DIM, DIM));
     GpuTimer timer;
     uint64_t seed;
     uint64_t flops;
@@ -78,7 +78,8 @@ int main(int argc, char **argv)
     // to be non-zero. A value of "0" here truncates random values to integers
     int bits_less_than_one = 1;
 
-    seed = time(NULL);
+    seed = 0;
+    // seed = time(NULL);
     cutlass::reference::device::TensorFillRandomGaussian(
         A.device_view(),
         seed,
@@ -87,7 +88,7 @@ int main(int argc, char **argv)
         bits_less_than_one
     );
 
-    seed = time(NULL);
+    // seed = time(NULL);
     cutlass::reference::device::TensorFillRandomGaussian(
         B.device_view(),
         seed,
@@ -96,7 +97,7 @@ int main(int argc, char **argv)
         bits_less_than_one
     );
 
-    seed = time(NULL);
+    // seed = time(NULL);
     cutlass::reference::device::TensorFillRandomGaussian(
         C_expt.device_view(),
         seed,
@@ -155,15 +156,24 @@ int main(int argc, char **argv)
     C_reference.sync_host();
     printf("Ref: %.2f GFlops/s\n", (ITERATIONS * flops * 1e-9) / ref_time_s);
 
+    std::cout << "A:"  << std::endl << std::endl;
+    std::cout << A.host_view() << std::endl << std::endl;
+
+    std::cout << "B:"  << std::endl << std::endl;
+    std::cout << B.host_view() << std::endl << std::endl;
+
     // Compare reference to computed results.
     if (!cutlass::reference::host::TensorEquals(
         C_reference.host_view(), 
         C_expt.host_view())) {
         std::cout << "ERROR: Results are incorrect!" << std::endl;
-        // std::cout << "Experiment results:"  << std::endl << std::endl;
-        // std::cout << C_expt.host_view() << std::endl << std::endl;
-        // std::cout << "Reference results:"  << std::endl << std::endl;
-        // std::cout << C_reference.host_view() << std::endl << std::endl;       
+        
+        
+        std::cout << "Experiment results:"  << std::endl << std::endl;
+        std::cout << C_expt.host_view() << std::endl << std::endl;
+
+        std::cout << "Reference results:"  << std::endl << std::endl;
+        std::cout << C_reference.host_view() << std::endl << std::endl;       
     }
 
     cublasDestroy_v2(handle);

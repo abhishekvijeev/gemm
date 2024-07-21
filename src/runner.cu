@@ -23,7 +23,10 @@ void run_sgemm_naive(
 {
     // Max threads in a thread block = 1024
     dim3 block_dim(32, 32);
-    dim3 grid_dim((DIM + block_dim.x - 1) / block_dim.x, (DIM + block_dim.y - 1) / block_dim.y);
+    dim3 grid_dim(
+        (DIM + block_dim.x - 1) / block_dim.x,
+        (DIM + block_dim.y - 1) / block_dim.y
+    );
     
     kernel1_naive<<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
@@ -54,7 +57,10 @@ void run_sgemm_shmem(
     int max_threads_per_block = std::min(max_shmem_per_block / shmem_per_thread, 1024UL);
     size_t shmem_per_block = max_threads_per_block * shmem_per_thread;
     dim3 block_dim(sqrt(max_threads_per_block), sqrt(max_threads_per_block));
-    dim3 grid_dim((DIM + block_dim.x - 1) / block_dim.x, (DIM + block_dim.y - 1) / block_dim.y);
+    dim3 grid_dim(
+        (DIM + block_dim.x - 1) / block_dim.x,
+        (DIM + block_dim.y - 1) / block_dim.y
+    );
 
     kernel2_shmem<<<grid_dim, block_dim, shmem_per_block>>>(A, B, C, DIM, alpha, beta, block_dim.y, block_dim.x);
     CUDA_CHECK(cudaGetLastError());
@@ -69,8 +75,14 @@ void run_gemm_thread_coarsen_row(
     float beta
 )
 {
-    dim3 block_dim(32, 32);
-    dim3 grid_dim((DIM + block_dim.x - 1) / block_dim.x, (DIM + block_dim.y - 1) / block_dim.y);
-    kernel3_thread_coarsen_row<<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
+    const int TILE_WIDTH = 2;
+    const int COARSEN_FACTOR = 4;
+    dim3 block_dim(TILE_WIDTH, TILE_WIDTH);
+    dim3 grid_dim(
+        (DIM + (block_dim.x * COARSEN_FACTOR) - 1) / (block_dim.x * COARSEN_FACTOR),
+        (DIM + block_dim.y - 1) / block_dim.y
+    );
+    kernel3_thread_coarsen_row <TILE_WIDTH, COARSEN_FACTOR>
+        <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }
