@@ -44,9 +44,13 @@ void run_kernel(
         case 3:
             run_gemm_thread_coarsen_v1(A, B, C, DIM, ALPHA, BETA);
             break;
+        
+        case 4:
+            run_gemm_thread_coarsen_v2(A, B, C, DIM, ALPHA, BETA);
+            break;
 
         default:
-            printf("Invalid kernel number - [1-3] allowed\n");
+            printf("Invalid kernel number - [1-4] allowed\n");
             break;
     }
 }
@@ -77,7 +81,7 @@ int main(int argc, char **argv)
 
     // Specify the number of bits right of the binary decimal that are permitted
     // to be non-zero. A value of "0" here truncates random values to integers
-    int bits_less_than_one = 0;
+    int bits_less_than_one = 1;
 
     seed = 0;
     // seed = time(NULL);
@@ -157,11 +161,11 @@ int main(int argc, char **argv)
     C_reference.sync_host();
     printf("Ref: %.2f GFlops/s\n", (ITERATIONS * flops * 1e-9) / ref_time_s);
 
-    // std::cout << "A:"  << std::endl << std::endl;
-    // std::cout << A.host_view() << std::endl << std::endl;
+    std::cout << "A:"  << std::endl << std::endl;
+    std::cout << A.host_view() << std::endl << std::endl;
 
-    // std::cout << "B:"  << std::endl << std::endl;
-    // std::cout << B.host_view() << std::endl << std::endl;
+    std::cout << "B:"  << std::endl << std::endl;
+    std::cout << B.host_view() << std::endl << std::endl;
 
     // Compare reference to computed results.
     if (!cutlass::reference::host::TensorEquals(
@@ -170,11 +174,11 @@ int main(int argc, char **argv)
         std::cout << "ERROR: Results are incorrect!" << std::endl;
         
         
-        std::cout << "Experiment results:"  << std::endl << std::endl;
-        std::cout << C_expt.host_view() << std::endl << std::endl;
+        // std::cout << "Experiment results:"  << std::endl << std::endl;
+        // std::cout << C_expt.host_view() << std::endl << std::endl;
 
-        std::cout << "Reference results:"  << std::endl << std::endl;
-        std::cout << C_reference.host_view() << std::endl << std::endl;       
+        // std::cout << "Reference results:"  << std::endl << std::endl;
+        // std::cout << C_reference.host_view() << std::endl << std::endl;       
     }
 
     cublasDestroy_v2(handle);
