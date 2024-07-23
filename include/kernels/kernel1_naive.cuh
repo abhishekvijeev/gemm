@@ -1,5 +1,3 @@
-#include <kernels.cuh>
-
 /*
  * Threads with consecutive thread IDs within a thread block belong to a warp,
  * whose threads execute the same instruction in lock-step (SIMD).

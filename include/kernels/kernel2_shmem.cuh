@@ -1,5 +1,3 @@
-#include <kernels.cuh>
-
 /*
  * Shared Memory Tiling
  *
@@ -72,8 +70,7 @@
  * elements will remain unused.
  */
 
-#define TILE_WIDTH 32
-
+template <const int TILE_WIDTH>
 __global__ void kernel2_shmem(float *A, float *B, float *C, int DIM, float alpha, float beta, size_t tile_dim_y, size_t tile_dim_x)
 {
     int tidx = threadIdx.x, tidy = threadIdx.y;

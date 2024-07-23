@@ -42,27 +42,15 @@ void run_sgemm_shmem(
     size_t max_shmem_per_block
 )
 {
-    // The SGEMM tiled matrix multiplication algorithm requires each
-    // thread within a thread block to load one element from input
-    // matrix A and one element from input matrix B to shared memory.
-    // Here, we assume that A and B are square matrices of the same
-    // size. Therefore, the amount of shared memory used per thread
-    // is equal to 2 * sizeof(element)
-    size_t shmem_per_thread = 2 * sizeof(A);
-
-    // We assume the simple case where the thread block dimensions
-    // and shared memory tile dimensions are identical. Therefore,
-    // each shared memory tile is a square matrix of dimensions
-    // (block_dim.y, block_dim.x)
-    int max_threads_per_block = std::min(max_shmem_per_block / shmem_per_thread, 1024UL);
-    size_t shmem_per_block = max_threads_per_block * shmem_per_thread;
-    dim3 block_dim(sqrt(max_threads_per_block), sqrt(max_threads_per_block));
+    const int TILE_WIDTH = 32;
+    dim3 block_dim(TILE_WIDTH, TILE_WIDTH);
     dim3 grid_dim(
         (DIM + block_dim.x - 1) / block_dim.x,
         (DIM + block_dim.y - 1) / block_dim.y
     );
 
-    kernel2_shmem<<<grid_dim, block_dim, shmem_per_block>>>(A, B, C, DIM, alpha, beta, block_dim.y, block_dim.x);
+    kernel2_shmem<TILE_WIDTH>
+        <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta, block_dim.y, block_dim.x);
     CUDA_CHECK(cudaGetLastError());
 }
 
@@ -75,8 +63,12 @@ void run_gemm_thread_coarsen_row(
     float beta
 )
 {
-    const int TILE_WIDTH = 2;
-    const int COARSEN_FACTOR = 4;
+    const int tileM = 64;
+    const int tileN = 64;
+    const int tileK = 8;
+
+    const int TILE_WIDTH = 32;
+    const int COARSEN_FACTOR = 2;
     dim3 block_dim(TILE_WIDTH, TILE_WIDTH);
     dim3 grid_dim(
         (DIM + (block_dim.x * COARSEN_FACTOR) - 1) / (block_dim.x * COARSEN_FACTOR),
