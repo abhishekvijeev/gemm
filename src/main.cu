@@ -42,7 +42,7 @@ void run_kernel(
             break;
 
         case 3:
-            run_gemm_thread_coarsen_row(A, B, C, DIM, ALPHA, BETA);
+            run_gemm_thread_coarsen_v1(A, B, C, DIM, ALPHA, BETA);
             break;
 
         default:

@@ -54,7 +54,7 @@ void run_sgemm_shmem(
     CUDA_CHECK(cudaGetLastError());
 }
 
-void run_gemm_thread_coarsen_row(
+void run_gemm_thread_coarsen_v1(
     float *A,
     float *B,
     float *C, 
@@ -63,10 +63,6 @@ void run_gemm_thread_coarsen_row(
     float beta
 )
 {
-    const int tileM = 64;
-    const int tileN = 64;
-    const int tileK = 8;
-
     const int TILE_WIDTH = 32;
     const int COARSEN_FACTOR = 2;
     dim3 block_dim(TILE_WIDTH, TILE_WIDTH);

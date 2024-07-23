@@ -44,7 +44,7 @@
  */
 
 template <const int TILE_WIDTH, const int COARSEN_FACTOR>
-__global__ void kernel3_thread_coarsen_row(float *A, float *B, float *C, int DIM, float alpha, float beta)
+__global__ void kernel3_thread_coarsen_v1(float *A, float *B, float *C, int DIM, float alpha, float beta)
 {
     int tidx = threadIdx.x, tidy = threadIdx.y;
     int bidx = blockIdx.x, bidy = blockIdx.y;
