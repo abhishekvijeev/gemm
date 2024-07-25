@@ -53,7 +53,7 @@ __global__ void kernel4_thread_coarsen_v2(float *A, float *B, float *C, int DIM,
             for (int j = 0; j < THREAD_TILE_N; j++) {
 
                 if (bidx == 0 && tidx == 0 && bidy == 1 && tidy == 1) {
-                    printf("blockTileA[%d][%d] \n", (tidy * THREAD_TILE_M) + i, (tidx * THREAD_TILE_N) + j);
+                    printf("blockTileA[%d][%d] = A[%d][%d]\n", (tidy * THREAD_TILE_M) + i, (tidx * THREAD_TILE_N) + j, cRowStart + i, phase * BLOCK_TILE_K + tidx + j);
                 }
 
                 // blockTileA[tidy + i][tidx + j] = A[rowStart + i][];
