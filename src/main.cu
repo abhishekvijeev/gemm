@@ -81,9 +81,9 @@ int main(int argc, char **argv)
 
     // Specify the number of bits right of the binary decimal that are permitted
     // to be non-zero. A value of "0" here truncates random values to integers
-    int bits_less_than_one = 1;
+    int bits_less_than_one = 0;
 
-    seed = 0;
+    seed = 1;
     // seed = time(NULL);
     cutlass::reference::device::TensorFillRandomGaussian(
         A.device_view(),
@@ -174,11 +174,11 @@ int main(int argc, char **argv)
         std::cout << "ERROR: Results are incorrect!" << std::endl;
         
         
-        // std::cout << "Experiment results:"  << std::endl << std::endl;
-        // std::cout << C_expt.host_view() << std::endl << std::endl;
+        std::cout << "Experiment results:"  << std::endl << std::endl;
+        std::cout << C_expt.host_view() << std::endl << std::endl;
 
-        // std::cout << "Reference results:"  << std::endl << std::endl;
-        // std::cout << C_reference.host_view() << std::endl << std::endl;       
+        std::cout << "Reference results:"  << std::endl << std::endl;
+        std::cout << C_reference.host_view() << std::endl << std::endl;       
     }
 
     cublasDestroy_v2(handle);
