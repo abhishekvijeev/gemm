@@ -16,7 +16,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include <parse_cmdline.h>
+#include <cmdline.h>
 #include <runner.h>
 #include <util.h>
 
@@ -26,7 +26,7 @@ void run_kernel(
     float *A,
     float *B,
     float *C,
-    int DIM,
+    int dim,
     float alpha,
     float beta
 )
@@ -34,19 +34,19 @@ void run_kernel(
     size_t max_shmem_per_block = prop->sharedMemPerBlock;
     switch (kernel_num) {
         case 1:
-            run_sgemm_naive(A, B, C, DIM, ALPHA, BETA);
+            run_sgemm_naive(A, B, C, dim, alpha, beta);
             break;
 
         case 2:
-            run_sgemm_shmem(A, B, C, DIM, ALPHA, BETA, max_shmem_per_block);
+            run_sgemm_shmem(A, B, C, dim, alpha, beta, max_shmem_per_block);
             break;
 
         case 3:
-            run_gemm_thread_coarsen_v1(A, B, C, DIM, ALPHA, BETA);
+            run_gemm_thread_coarsen_v1(A, B, C, dim, alpha, beta);
             break;
         
         case 4:
-            run_gemm_thread_coarsen_v2(A, B, C, DIM, ALPHA, BETA);
+            run_gemm_thread_coarsen_v2(A, B, C, dim, alpha, beta);
             break;
 
         default:
@@ -55,9 +55,16 @@ void run_kernel(
     }
 }
 
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
-    parse_cmdline_options(argc, argv);
+    CommandLineArgs args;
+    args.parse(argc, argv);
+    int DIM = args.dim;
+    unsigned int KERNEL = args.kernel;
+    float ALPHA = args.alpha;
+    float BETA = args.beta;
+    unsigned int ITERATIONS = args.iterations;
+
     cutlass::HostTensor<float, cutlass::layout::RowMajor> A(cutlass::MatrixCoord(DIM, DIM));
     cutlass::HostTensor<float, cutlass::layout::RowMajor> B(cutlass::MatrixCoord(DIM, DIM));
     cutlass::HostTensor<float, cutlass::layout::RowMajor> C_expt(cutlass::MatrixCoord(DIM, DIM));
@@ -161,11 +168,11 @@ int main(int argc, char **argv)
     C_reference.sync_host();
     printf("Ref: %.2f GFlops/s\n", (ITERATIONS * flops * 1e-9) / ref_time_s);
 
-    std::cout << "A:"  << std::endl << std::endl;
-    std::cout << A.host_view() << std::endl << std::endl;
+    // std::cout << "A:"  << std::endl << std::endl;
+    // std::cout << A.host_view() << std::endl << std::endl;
 
-    std::cout << "B:"  << std::endl << std::endl;
-    std::cout << B.host_view() << std::endl << std::endl;
+    // std::cout << "B:"  << std::endl << std::endl;
+    // std::cout << B.host_view() << std::endl << std::endl;
 
     // Compare reference to computed results.
     if (!cutlass::reference::host::TensorEquals(
@@ -174,11 +181,11 @@ int main(int argc, char **argv)
         std::cout << "ERROR: Results are incorrect!" << std::endl;
         
         
-        std::cout << "Experiment results:"  << std::endl << std::endl;
-        std::cout << C_expt.host_view() << std::endl << std::endl;
+        // std::cout << "Experiment results:"  << std::endl << std::endl;
+        // std::cout << C_expt.host_view() << std::endl << std::endl;
 
-        std::cout << "Reference results:"  << std::endl << std::endl;
-        std::cout << C_reference.host_view() << std::endl << std::endl;       
+        // std::cout << "Reference results:"  << std::endl << std::endl;
+        // std::cout << C_reference.host_view() << std::endl << std::endl;       
     }
 
     cublasDestroy_v2(handle);
