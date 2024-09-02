@@ -64,7 +64,7 @@ __global__ void kernel4_thread_coarsen_v2(float *A, float *B, float *C, int DIM,
                 }
 
                 ATile[(tidy * THREAD_TILE_M) + i][(tidx * THREAD_TILE_N) + j] = 
-                    A[(cRowStart * THREAD_TILE_N + i) * DIM + (phase * BLOCK_TILE_K + tidx * THREAD_TILE_M + j)];
+                    A[(cRowStart * THREAD_TILE_M + i) * DIM + (phase * BLOCK_TILE_K + tidx * THREAD_TILE_N + j)];
 
                 BTile[(tidy * THREAD_TILE_M) + i][(tidx * THREAD_TILE_N) + j] = 
                     B[(phase * BLOCK_TILE_K + tidy * THREAD_TILE_N + i) * DIM + (cColStart * THREAD_TILE_M + j)];
@@ -95,9 +95,22 @@ __global__ void kernel4_thread_coarsen_v2(float *A, float *B, float *C, int DIM,
             printf("\n\n");
         }
 
-
+        #pragma unroll
+        for (int i = 0; i < THREAD_TILE_M; i++) {
+            #pragma unroll
+            for (int j = 0; j < THREAD_TILE_N; j++) {
+                sum[i][j] +=
+                    ATile[(tidy * THREAD_TILE_M) + i][(tidx * THREAD_TILE_N) + j] * 
+                    BTile[(tidy * THREAD_TILE_M) + i][(tidx * THREAD_TILE_N) + j];
+            }
+        }
         __syncthreads();
     }
 
+    for (int i = 0; i < THREAD_TILE_M; i++) {
+        for (int j = 0; j < THREAD_TILE_N; j++) {
+            C[(cRowStart + i) * DIM + (cColStart + j)] = sum[i][j];
+        }
+    }
 
 }

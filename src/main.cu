@@ -59,11 +59,12 @@ int main(int argc, const char **argv)
 {
     CommandLineArgs args;
     args.parse(argc, argv);
+
     int DIM = args.dim;
-    unsigned int KERNEL = args.kernel;
+    int KERNEL = args.kernel;
     float ALPHA = args.alpha;
     float BETA = args.beta;
-    unsigned int ITERATIONS = args.iterations;
+    int ITERATIONS = args.iterations;
 
     cutlass::HostTensor<float, cutlass::layout::RowMajor> A(cutlass::MatrixCoord(DIM, DIM));
     cutlass::HostTensor<float, cutlass::layout::RowMajor> B(cutlass::MatrixCoord(DIM, DIM));
@@ -168,11 +169,11 @@ int main(int argc, const char **argv)
     C_reference.sync_host();
     printf("Ref: %.2f GFlops/s\n", (ITERATIONS * flops * 1e-9) / ref_time_s);
 
-    // std::cout << "A:"  << std::endl << std::endl;
-    // std::cout << A.host_view() << std::endl << std::endl;
+    std::cout << "A:"  << std::endl << std::endl;
+    std::cout << A.host_view() << std::endl << std::endl;
 
-    // std::cout << "B:"  << std::endl << std::endl;
-    // std::cout << B.host_view() << std::endl << std::endl;
+    std::cout << "B:"  << std::endl << std::endl;
+    std::cout << B.host_view() << std::endl << std::endl;
 
     // Compare reference to computed results.
     if (!cutlass::reference::host::TensorEquals(
