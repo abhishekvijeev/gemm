@@ -96,10 +96,15 @@ void run_gemm_thread_coarsen_v2(
     const int THREAD_BLOCK_DIM_X = 2;
     const int THREAD_BLOCK_DIM_Y = 2;
     dim3 block_dim(THREAD_BLOCK_DIM_X, THREAD_BLOCK_DIM_Y);
-    dim3 grid_dim(
-        (DIM + THREAD_BLOCK_DIM_X - 1) / THREAD_BLOCK_DIM_X,
-        (DIM + THREAD_BLOCK_DIM_Y - 1) / THREAD_BLOCK_DIM_Y
-    );
+    // dim3 grid_dim(
+    //     (DIM + THREAD_BLOCK_DIM_X - 1) / THREAD_BLOCK_DIM_X,
+    //     (DIM + THREAD_BLOCK_DIM_Y - 1) / THREAD_BLOCK_DIM_Y
+    // );
+    dim3 grid_dim(2,2);
+
+    printf("DIM: %d\n", DIM);
+    printf("blockDim.x: %d, blockDim.y: %d\n", block_dim.x, block_dim.y);
+    printf("gridDim.x: %d, gridDim.y: %d\n", grid_dim.x, grid_dim.y);
 
     // Each thread block is responsible for a TILE_M x TILE_N tile
     // of C - each such tile is computed as a sum of products between

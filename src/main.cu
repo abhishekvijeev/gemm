@@ -182,11 +182,11 @@ int main(int argc, const char **argv)
         std::cout << "ERROR: Results are incorrect!" << std::endl;
         
         
-        // std::cout << "Experiment results:"  << std::endl << std::endl;
-        // std::cout << C_expt.host_view() << std::endl << std::endl;
+        std::cout << "Experiment results:"  << std::endl << std::endl;
+        std::cout << C_expt.host_view() << std::endl << std::endl;
 
-        // std::cout << "Reference results:"  << std::endl << std::endl;
-        // std::cout << C_reference.host_view() << std::endl << std::endl;       
+        std::cout << "Reference results:"  << std::endl << std::endl;
+        std::cout << C_reference.host_view() << std::endl << std::endl;       
     }
 
     cublasDestroy_v2(handle);
