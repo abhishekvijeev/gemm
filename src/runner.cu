@@ -80,6 +80,8 @@ void run_gemm_thread_coarsen_v1(
     CUDA_CHECK(cudaGetLastError());
 }
 
+
+
 void run_gemm_thread_coarsen_v2(
     float *A,
     float *B,
@@ -89,38 +91,28 @@ void run_gemm_thread_coarsen_v2(
     float beta
 )
 {
-    // We fix the number of threads per block and vary the number
-    // of elements computed per thread according to tile size, which
-    // is a tunable parameter (maximum allowed tile width along any
-    // dimension = 128)
-    const int THREAD_BLOCK_DIM_X = 2;
-    const int THREAD_BLOCK_DIM_Y = 2;
-    dim3 block_dim(THREAD_BLOCK_DIM_X, THREAD_BLOCK_DIM_Y);
-    // dim3 grid_dim(
-    //     (DIM + THREAD_BLOCK_DIM_X - 1) / THREAD_BLOCK_DIM_X,
-    //     (DIM + THREAD_BLOCK_DIM_Y - 1) / THREAD_BLOCK_DIM_Y
-    // );
-    dim3 grid_dim(2,2);
+    const int THREAD_TILE_M = 4;
+    const int THREAD_TILE_N = 4;
 
-    printf("DIM: %d\n", DIM);
-    printf("blockDim.x: %d, blockDim.y: %d\n", block_dim.x, block_dim.y);
-    printf("gridDim.x: %d, gridDim.y: %d\n", grid_dim.x, grid_dim.y);
+    const int THREADBLOCK_TILE_M = 64;
+    const int THREADBLOCK_TILE_N = 64;
+    const int THREADBLOCK_TILE_K = 64;
 
-    // Each thread block is responsible for a TILE_M x TILE_N tile
-    // of C - each such tile is computed as a sum of products between
-    // A's tiles (of size TILE_M x TILE_K) and B's tiles (of size
-    // TILE_K x TILE_N)
-    const int BLOCK_TILE_M = 4;
-    const int BLOCK_TILE_N = 4;
-    const int BLOCK_TILE_K = 4;
+    const int THREADBLOCK_DIM_X = THREADBLOCK_TILE_N / THREAD_TILE_N;
+    const int THREADBLOCK_DIM_Y = THREADBLOCK_TILE_M / THREAD_TILE_M;
+    const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
+    const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
 
-    // Number of C's elements computed by each thread in the
-    // horizontal and vertical directions respectively
-    const int THREAD_TILE_M = (BLOCK_TILE_M + THREAD_BLOCK_DIM_X - 1) / THREAD_BLOCK_DIM_X;
-    const int THREAD_TILE_N = (BLOCK_TILE_N + THREAD_BLOCK_DIM_Y - 1) / THREAD_BLOCK_DIM_Y;
+    dim3 block_dim(THREADBLOCK_DIM_X, THREADBLOCK_DIM_Y);
+    dim3 grid_dim(GRID_DIM_X, GRID_DIM_Y);
+
+    // printf("grid_dim.x: %d\n", grid_dim.x);
+    // printf("grid_dim.y: %d\n", grid_dim.y);
+    // printf("block_dim.x: %d\n", block_dim.x);
+    // printf("block_dim.y: %d\n", block_dim.y);
 
     kernel4_thread_coarsen_v2
-        <BLOCK_TILE_M, BLOCK_TILE_N, BLOCK_TILE_K, THREAD_TILE_M, THREAD_TILE_N>
+        <THREADBLOCK_TILE_M, THREADBLOCK_TILE_N, THREADBLOCK_TILE_K, THREAD_TILE_M, THREAD_TILE_N>
         <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }

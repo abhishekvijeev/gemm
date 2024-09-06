@@ -169,11 +169,11 @@ int main(int argc, const char **argv)
     C_reference.sync_host();
     printf("Ref: %.2f GFlops/s\n", (ITERATIONS * flops * 1e-9) / ref_time_s);
 
-    std::cout << "A:"  << std::endl << std::endl;
-    std::cout << A.host_view() << std::endl << std::endl;
+    // std::cout << "A:"  << std::endl << std::endl;
+    // std::cout << A.host_view() << std::endl << std::endl;
 
-    std::cout << "B:"  << std::endl << std::endl;
-    std::cout << B.host_view() << std::endl << std::endl;
+    // std::cout << "B:"  << std::endl << std::endl;
+    // std::cout << B.host_view() << std::endl << std::endl;
 
     // Compare reference to computed results.
     if (!cutlass::reference::host::TensorEquals(
@@ -181,12 +181,11 @@ int main(int argc, const char **argv)
         C_expt.host_view())) {
         std::cout << "ERROR: Results are incorrect!" << std::endl;
         
-        
-        std::cout << "Experiment results:"  << std::endl << std::endl;
-        std::cout << C_expt.host_view() << std::endl << std::endl;
+        // std::cout << "Experiment results:"  << std::endl << std::endl;
+        // std::cout << C_expt.host_view() << std::endl << std::endl;
 
-        std::cout << "Reference results:"  << std::endl << std::endl;
-        std::cout << C_reference.host_view() << std::endl << std::endl;       
+        // std::cout << "Reference results:"  << std::endl << std::endl;
+        // std::cout << C_reference.host_view() << std::endl << std::endl;       
     }
 
     cublasDestroy_v2(handle);
