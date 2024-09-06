@@ -126,6 +126,13 @@ void run_gemm_vectorize(
     float beta
 )
 {
+    // const int THREAD_TILE_M = 2;
+    // const int THREAD_TILE_N = 2;
+
+    // const int THREADBLOCK_TILE_M = 4;
+    // const int THREADBLOCK_TILE_N = 4;
+    // const int THREADBLOCK_TILE_K = 4;
+
     const int THREAD_TILE_M = 4;
     const int THREAD_TILE_N = 4;
 

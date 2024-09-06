@@ -36,29 +36,35 @@ __global__ void kernel5_vectorize(float *A, float *B, float *C, int DIM, float a
         // }
         #pragma unroll
         for (int i = 0; i < THREAD_TILE_M; i++) {
-            #pragma unroll
-            for (int j = 0; j < THREAD_TILE_N; j++) {
+            int ATileRow = (tidy * THREAD_TILE_M) + i;
+            int ATileCol = (tidx * THREAD_TILE_N);
+            int ARow = (cRowStart + tidy * THREAD_TILE_M + i);
+            int ACol = (phase * BLOCK_TILE_K + tidx * THREAD_TILE_N);
 
-                int ATileRow = (tidy * THREAD_TILE_M) + i;
-                int ATileCol = (tidx * THREAD_TILE_N) + j;
-                int ARow = (cRowStart + tidy * THREAD_TILE_M + i);
-                int ACol = (phase * BLOCK_TILE_K + tidx * THREAD_TILE_N + j);
 
-                int BTileRow = (tidy * THREAD_TILE_M) + i;
-                int BTileCol = (tidx * THREAD_TILE_N) + j;
-                int BRow = (phase * BLOCK_TILE_K + tidy * THREAD_TILE_N + i);
-                int BCol = (cColStart + tidx * THREAD_TILE_M + j);
+            int BTileRow = (tidy * THREAD_TILE_M) + i;
+            int BTileCol = (tidx * THREAD_TILE_N);
+            int BRow = (phase * BLOCK_TILE_K + tidy * THREAD_TILE_N + i);
+            int BCol = (cColStart + tidx * THREAD_TILE_M);
 
-                if (tidx * THREAD_TILE_N < BLOCK_TILE_K)
-                    ATile[ATileRow][ATileCol] = A[ARow * DIM + ACol];
-                if (tidy * THREAD_TILE_M < BLOCK_TILE_K)
-                    BTile[BTileRow][BTileCol] = B[BRow * DIM + BCol];
+            float4 AVec = *reinterpret_cast<float4 *>(&A[ARow * DIM + ACol]);
+            // if (debug_thread()) {
+            //     printf("AVec.x: %f\n", AVec.x);
+            //     printf("AVec.y: %f\n", AVec.y);
+            //     printf("AVec.z: %f\n", AVec.z);
+            //     printf("AVec.w: %f\n", AVec.w);   
+            // }
+            ATile[ATileRow][ATileCol + 0] = AVec.x;
+            ATile[ATileRow][ATileCol + 1] = AVec.y;
+            ATile[ATileRow][ATileCol + 2] = AVec.z;
+            ATile[ATileRow][ATileCol + 3] = AVec.w;
 
-                // if (debug_thread()) {
-                //     printf("ATile[%d][%d] = A[%d][%d] = %.0f\n", ATileRow, ATileCol, ARow, ACol, ATile[ATileRow][ATileCol]);
-                //     printf("BTile[%d][%d] = B[%d][%d] = %.0f\n", BTileRow, BTileCol, BRow, BCol, BTile[BTileRow][BTileCol]);
-                // }
-            }
+            float4 BVec = *reinterpret_cast<float4 *>(&B[BRow * DIM + BCol]);
+            BTile[BTileRow][BTileCol + 0] = BVec.x;
+            BTile[BTileRow][BTileCol + 1] = BVec.y;
+            BTile[BTileRow][BTileCol + 2] = BVec.z;
+            BTile[BTileRow][BTileCol + 3] = BVec.w;
+
         }
         __syncthreads();
         // if (debug_thread()) {
