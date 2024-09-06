@@ -127,15 +127,14 @@ __global__ void kernel5_vectorize(float *A, float *B, float *C, int DIM, float a
     // printf("%d, %d\n", cRowStart, cColStart);
     #pragma unroll
     for (int i = 0; i < THREAD_TILE_M; i++) {
-        #pragma unroll
-        for (int j = 0; j < THREAD_TILE_N; j++) {
-            int cRow = (cRowStart + tidy * THREAD_TILE_M + i);
-            int cCol = (cColStart + tidx * THREAD_TILE_N + j);
-            C[cRow * DIM + cCol] = sum[i][j];
-            // if (debug_thread()) {
-            //     printf("C[%d][%d] = %.0f\n", cRow, cCol, sum[i][j]);
-            // }
-        }
+        int cRow = (cRowStart + tidy * THREAD_TILE_M + i);
+        int cCol = (cColStart + tidx * THREAD_TILE_N);
+        float4 CVec;
+        CVec.x = sum[i][0];
+        CVec.y = sum[i][1];
+        CVec.z = sum[i][2];
+        CVec.w = sum[i][3];
+        *reinterpret_cast<float4 *>(&C[cRow * DIM + cCol]) = CVec;
     }
 
 }
