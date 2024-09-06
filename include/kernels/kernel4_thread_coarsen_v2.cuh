@@ -16,10 +16,10 @@
  * tile of C.
  */
 
-#define DEBUG_BIDX 1
+#define DEBUG_BIDX 0
 #define DEBUG_BIDY 0
 #define DEBUG_TIDX 1
-#define DEBUG_TIDY 1
+#define DEBUG_TIDY 0
 
 __device__ bool debug_thread()
 {
@@ -80,8 +80,10 @@ __global__ void kernel4_thread_coarsen_v2(float *A, float *B, float *C, int DIM,
                 int BRow = (phase * BLOCK_TILE_K + tidy * THREAD_TILE_N + i);
                 int BCol = (cColStart + tidx * THREAD_TILE_M + j);
 
-                ATile[ATileRow][ATileCol] = A[ARow * DIM + ACol];
-                BTile[BTileRow][BTileCol] = B[BRow * DIM + BCol];
+                if (tidx * THREAD_TILE_N < BLOCK_TILE_K)
+                    ATile[ATileRow][ATileCol] = A[ARow * DIM + ACol];
+                if (tidy * THREAD_TILE_M < BLOCK_TILE_K)
+                    BTile[BTileRow][BTileCol] = B[BRow * DIM + BCol];
 
                 // if (debug_thread()) {
                 //     printf("ATile[%d][%d] = A[%d][%d] = %.0f\n", ATileRow, ATileCol, ARow, ACol, ATile[ATileRow][ATileCol]);
