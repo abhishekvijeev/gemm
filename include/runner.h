@@ -34,3 +34,12 @@ void run_gemm_thread_coarsen_v2(
     float alpha,
     float beta
 );
+
+void run_gemm_vectorize(
+    float *A,
+    float *B,
+    float *C, 
+    int DIM,
+    float alpha,
+    float beta
+);

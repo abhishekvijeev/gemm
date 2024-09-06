@@ -48,6 +48,10 @@ void run_kernel(
         case 4:
             run_gemm_thread_coarsen_v2(A, B, C, dim, alpha, beta);
             break;
+        
+        case 5:
+            run_gemm_vectorize(A, B, C, dim, alpha, beta);
+            break;
 
         default:
             printf("Invalid kernel number - [1-4] allowed\n");
