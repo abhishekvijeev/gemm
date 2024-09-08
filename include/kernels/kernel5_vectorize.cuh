@@ -36,35 +36,39 @@ __global__ void kernel5_vectorize(float *A, float *B, float *C, int DIM, float a
         // }
         #pragma unroll
         for (int i = 0; i < THREAD_TILE_M; i++) {
-            int ATileRow = (tidy * THREAD_TILE_M) + i;
-            int ATileCol = (tidx * THREAD_TILE_N);
-            int ARow = (cRowStart + tidy * THREAD_TILE_M + i);
-            int ACol = (phase * BLOCK_TILE_K + tidx * THREAD_TILE_N);
+            #pragma unroll
+            for (int j = 0; j < THREAD_TILE_N; j += 4) {
+                int ATileRow = (tidy * THREAD_TILE_M) + i;
+                int ATileCol = (tidx * THREAD_TILE_N) + j;
+                int ARow = (cRowStart + tidy * THREAD_TILE_M + i);
+                int ACol = (phase * BLOCK_TILE_K + tidx * THREAD_TILE_N + j);
 
+                int BTileRow = (tidy * THREAD_TILE_M) + i;
+                int BTileCol = (tidx * THREAD_TILE_N) + j;
+                int BRow = (phase * BLOCK_TILE_K + tidy * THREAD_TILE_N + i);
+                int BCol = (cColStart + tidx * THREAD_TILE_M + j);
 
-            int BTileRow = (tidy * THREAD_TILE_M) + i;
-            int BTileCol = (tidx * THREAD_TILE_N);
-            int BRow = (phase * BLOCK_TILE_K + tidy * THREAD_TILE_N + i);
-            int BCol = (cColStart + tidx * THREAD_TILE_M);
-
-            float4 AVec = *reinterpret_cast<float4 *>(&A[ARow * DIM + ACol]);
-            // if (debug_thread()) {
-            //     printf("AVec.x: %f\n", AVec.x);
-            //     printf("AVec.y: %f\n", AVec.y);
-            //     printf("AVec.z: %f\n", AVec.z);
-            //     printf("AVec.w: %f\n", AVec.w);   
-            // }
-            ATile[ATileRow][ATileCol + 0] = AVec.x;
-            ATile[ATileRow][ATileCol + 1] = AVec.y;
-            ATile[ATileRow][ATileCol + 2] = AVec.z;
-            ATile[ATileRow][ATileCol + 3] = AVec.w;
-
-            float4 BVec = *reinterpret_cast<float4 *>(&B[BRow * DIM + BCol]);
-            BTile[BTileRow][BTileCol + 0] = BVec.x;
-            BTile[BTileRow][BTileCol + 1] = BVec.y;
-            BTile[BTileRow][BTileCol + 2] = BVec.z;
-            BTile[BTileRow][BTileCol + 3] = BVec.w;
-
+                if (tidx * THREAD_TILE_N < BLOCK_TILE_K) {
+                    float4 AVec = *reinterpret_cast<float4 *>(&A[ARow * DIM + ACol]);
+                    // if (debug_thread()) {
+                    //     printf("AVec.x: %f\n", AVec.x);
+                    //     printf("AVec.y: %f\n", AVec.y);
+                    //     printf("AVec.z: %f\n", AVec.z);
+                    //     printf("AVec.w: %f\n", AVec.w);   
+                    // }
+                    ATile[ATileRow][ATileCol + 0] = AVec.x;
+                    ATile[ATileRow][ATileCol + 1] = AVec.y;
+                    ATile[ATileRow][ATileCol + 2] = AVec.z;
+                    ATile[ATileRow][ATileCol + 3] = AVec.w;
+                }
+                if (tidy * THREAD_TILE_M < BLOCK_TILE_K) {
+                    float4 BVec = *reinterpret_cast<float4 *>(&B[BRow * DIM + BCol]);
+                    BTile[BTileRow][BTileCol + 0] = BVec.x;
+                    BTile[BTileRow][BTileCol + 1] = BVec.y;
+                    BTile[BTileRow][BTileCol + 2] = BVec.z;
+                    BTile[BTileRow][BTileCol + 3] = BVec.w;
+                }
+            }
         }
         __syncthreads();
         // if (debug_thread()) {
@@ -127,14 +131,20 @@ __global__ void kernel5_vectorize(float *A, float *B, float *C, int DIM, float a
     // printf("%d, %d\n", cRowStart, cColStart);
     #pragma unroll
     for (int i = 0; i < THREAD_TILE_M; i++) {
-        int cRow = (cRowStart + tidy * THREAD_TILE_M + i);
-        int cCol = (cColStart + tidx * THREAD_TILE_N);
-        float4 CVec;
-        CVec.x = sum[i][0];
-        CVec.y = sum[i][1];
-        CVec.z = sum[i][2];
-        CVec.w = sum[i][3];
-        *reinterpret_cast<float4 *>(&C[cRow * DIM + cCol]) = CVec;
+        #pragma unroll
+        for (int j = 0; j < THREAD_TILE_N; j += 4) {
+            int cRow = (cRowStart + tidy * THREAD_TILE_M + i);
+            int cCol = (cColStart + tidx * THREAD_TILE_N + j);
+            // if (debug_thread()) {
+            //     printf("cRow: %d, cCol: %d\n", cRow, cCol);
+            // }
+            float4 CVec;
+            CVec.x = sum[i][j];
+            CVec.y = sum[i][j + 1];
+            CVec.z = sum[i][j + 2];
+            CVec.w = sum[i][j + 3];
+            *reinterpret_cast<float4 *>(&C[cRow * DIM + cCol]) = CVec;
+        }
     }
 
 }
