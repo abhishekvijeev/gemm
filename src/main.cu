@@ -53,8 +53,12 @@ void run_kernel(
             run_gemm_vectorize(A, B, C, dim, alpha, beta);
             break;
 
+        case 6:
+            run_gemm_cute(A, B, C, dim, alpha, beta);
+            break;
+
         default:
-            printf("Invalid kernel number - [1-4] allowed\n");
+            printf("Invalid kernel number - [1-6] allowed\n");
             break;
     }
 }
@@ -134,7 +138,7 @@ int main(int argc, const char **argv)
     C_expt.sync_host();
 
     // Discard first iteration
-    run_kernel(KERNEL, &prop, A.device_data(), B.device_data(), C_expt.device_data(), DIM, ALPHA, BETA);
+    // run_kernel(KERNEL, &prop, A.device_data(), B.device_data(), C_expt.device_data(), DIM, ALPHA, BETA);
     C_expt.sync_host();
 
     timer.start();

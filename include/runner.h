@@ -43,3 +43,12 @@ void run_gemm_vectorize(
     float alpha,
     float beta
 );
+
+void run_gemm_cute(
+    float *A,
+    float *B,
+    float *C, 
+    int DIM,
+    float alpha,
+    float beta
+);
