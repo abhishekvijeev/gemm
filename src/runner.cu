@@ -103,8 +103,8 @@ void run_gemm_thread_coarsen_v2(
     const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
     const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
 
-    dim3 block_dim(THREADBLOCK_DIM_X, THREADBLOCK_DIM_Y);
-    dim3 grid_dim(GRID_DIM_X, GRID_DIM_Y);
+    dim3 block_dim(THREADBLOCK_DIM_Y, THREADBLOCK_DIM_X);
+    dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
 
     // printf("grid_dim.x: %d\n", grid_dim.x);
     // printf("grid_dim.y: %d\n", grid_dim.y);
@@ -145,8 +145,8 @@ void run_gemm_vectorize(
     const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
     const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
 
-    dim3 block_dim(THREADBLOCK_DIM_X, THREADBLOCK_DIM_Y);
-    dim3 grid_dim(GRID_DIM_X, GRID_DIM_Y);
+    dim3 block_dim(THREADBLOCK_DIM_Y, THREADBLOCK_DIM_X);
+    dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
 
     // printf("grid_dim.x: %d\n", grid_dim.x);
     // printf("grid_dim.y: %d\n", grid_dim.y);
@@ -158,3 +158,4 @@ void run_gemm_vectorize(
         <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }
+
