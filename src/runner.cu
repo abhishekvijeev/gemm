@@ -168,9 +168,13 @@ void run_gemm_cute(
     float beta
 )
 {
-    const int THREADBLOCK_TILE_M = 128;
-    const int THREADBLOCK_TILE_N = 128;
-    const int THREADBLOCK_TILE_K = 8;
+    // const int THREADBLOCK_TILE_M = 128;
+    // const int THREADBLOCK_TILE_N = 128;
+    // const int THREADBLOCK_TILE_K = 8;
+
+    const int THREADBLOCK_TILE_M = 4;
+    const int THREADBLOCK_TILE_N = 4;
+    const int THREADBLOCK_TILE_K = 4;
 
     const int THREADBLOCK_DIM_X = 16;
     const int THREADBLOCK_DIM_Y = 16;
