@@ -5,17 +5,67 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
 {
     using namespace cute;
 
+    __shared__ float shared_a[BLOCK_TILE_M * BLOCK_TILE_K];
+    __shared__ float shared_b[BLOCK_TILE_K * BLOCK_TILE_N];
+
+    // Create global memory tensors
     Tensor gmem_a = make_tensor(make_gmem_ptr(A), make_shape(DIM, DIM), make_stride(DIM, 1));
     Tensor gmem_b = make_tensor(make_gmem_ptr(B), make_shape(DIM, DIM), make_stride(DIM, 1));
     Tensor gmem_c = make_tensor(make_gmem_ptr(C), make_shape(DIM, DIM), make_stride(DIM, 1));
 
-    auto cta_tiler_a = make_shape(BLOCK_TILE_M, BLOCK_TILE_K);
-    auto cta_tiler_b = make_shape(BLOCK_TILE_K, BLOCK_TILE_N);
-    auto cta_tiler_c = make_shape(BLOCK_TILE_M, BLOCK_TILE_N);
+    // Define tile sizes
+    auto tile_shape_a = make_shape(BLOCK_TILE_M, BLOCK_TILE_K);
+    auto tile_shape_b = make_shape(BLOCK_TILE_K, BLOCK_TILE_N);
+    auto tile_shape_c = make_shape(BLOCK_TILE_M, BLOCK_TILE_N);
 
-    auto gA = local_tile(gmem_a, cta_tiler_a, make_coord(blockIdx.x, blockIdx.y));
-    auto gB = local_tile(gmem_b, cta_tiler_b, make_coord(blockIdx.x, blockIdx.y));
-    auto gC = local_tile(gmem_c, cta_tiler_c, make_coord(blockIdx.x, blockIdx.y));
+    // Partition global memory into tiles
+    auto gA = local_tile(gmem_a, tile_shape_a, make_coord(blockIdx.x, _));
+    auto gB = local_tile(gmem_b, tile_shape_b, make_coord(_, blockIdx.y));
+    auto gC = local_tile(gmem_c, tile_shape_c, make_coord(blockIdx.x, blockIdx.y));
+    auto num_tiles = size<2>(gA);
+
+    // Create shared memory tensors
+    Tensor sA = make_tensor(make_smem_ptr(shared_a), tile_shape_a, make_stride(BLOCK_TILE_K, 1));
+    Tensor sB = make_tensor(make_smem_ptr(shared_b), tile_shape_b, make_stride(BLOCK_TILE_N, 1));
+
+    // Partition the tile's elements across all threads in the threadblock
+    auto tA = make_layout(make_shape(blockDim.x, blockDim.y), LayoutRight{});
+    auto tB = make_layout(make_shape(blockDim.x, blockDim.y), LayoutRight{});
+    Tensor tAgA = local_partition(gA, tA, threadIdx.x);
+    Tensor tBgB = local_partition(gB, tB, threadIdx.x);
+
+    if (thread0()) {
+        print_tensor(sA); printf("\n");
+        // print(tA); printf("\n\n");
+        // print(tAgA); printf("\n\n");
+    }
+
+    for (int tile_idx = 0; tile_idx < num_tiles; tile_idx++)
+    {
+        if (thread0()) {
+            Tensor gA_tile = gA(_,_,tile_idx);  // (BLK_M,BLK_K), the ith tile
+            for (int i = 0; i < size(sA); ++i) {
+                sA(i) = gA_tile(i);
+            }
+        }
+
+        __syncthreads();
+
+        if (thread0()) {
+            print_tensor(sA); printf("\n");
+        }
+    }
+
+    
+
+    // (4,4):(8,1)
+    // _ (4,4,2):(8,1,4)
+    // if (thread0()) {
+    //     print_tensor(gA); printf("\n\n\n");
+    //     print_tensor(gB); printf("\n\n\n");
+    //     printf("%d\n", num_tiles);
+    //     // print(size(gA)); printf("\n");
+    // }
 
     // if (thread0()) {
     // if (blockIdx.x == 0 && blockIdx.y == 1) {
@@ -37,46 +87,43 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
     //     }
     // }
 
-    __shared__ float shared_a[BLOCK_TILE_M * BLOCK_TILE_K];
-    __shared__ float shared_b[BLOCK_TILE_K * BLOCK_TILE_N];
+    // Tensor sA = make_tensor(make_smem_ptr(shared_a), make_shape(BLOCK_TILE_M, BLOCK_TILE_K), make_stride(BLOCK_TILE_K, 1));
+    // Tensor sB = make_tensor(make_smem_ptr(shared_b), make_shape(BLOCK_TILE_K, BLOCK_TILE_N), make_stride(BLOCK_TILE_N, 1));
 
-    Tensor sA = make_tensor(make_smem_ptr(shared_a), make_shape(BLOCK_TILE_M, BLOCK_TILE_K), make_stride(BLOCK_TILE_K, 1));
-    Tensor sB = make_tensor(make_smem_ptr(shared_b), make_shape(BLOCK_TILE_K, BLOCK_TILE_N), make_stride(BLOCK_TILE_N, 1));
+    // if (thread0()) {
+    //     print_tensor(gA); printf("\n");
+    //     print_tensor(sA); printf("\n");
+    // }
+    // __syncthreads();
 
-    if (thread0()) {
-        print_tensor(gA); printf("\n");
-        print_tensor(sA); printf("\n");
-    }
-    __syncthreads();
+    // /*
+    //  * The kernel now has:
+    //  *
+    //  * a) tiles of global memory by applying the tiler to the full tensors
+    //  * b) tiles of shared memory
+    //  * 
+    //  * Next, we want to copy one tile of global memory to our tile of shared memory.
+    //  * If we partition the two tiles of data across the threads in the CTA, then each thread can copy its own subtensor of data.
+    //  */
 
-    /*
-     * The kernel now has:
-     *
-     * a) tiles of global memory by applying the tiler to the full tensors
-     * b) tiles of shared memory
-     * 
-     * Next, we want to copy one tile of global memory to our tile of shared memory.
-     * If we partition the two tiles of data across the threads in the CTA, then each thread can copy its own subtensor of data.
-     */
+    // auto tA = make_layout(make_shape(Int<2>{},Int<4>{}));
+    // auto tB = make_layout(make_shape(Int<2>{},Int<4>{}));
 
-    auto tA = make_layout(make_shape(Int<1>{},Int<1>{}));
-    auto tB = make_layout(make_shape(Int<1>{},Int<1>{}));
+    // Tensor tAgA = local_partition(gA, tA, threadIdx.x);
+    // Tensor tAsA = local_partition(sA, tA, threadIdx.x);
 
-    Tensor tAgA = local_partition(gA, tA, threadIdx.x);
-    Tensor tAsA = local_partition(sA, tA, threadIdx.x);
+    // Tensor tBgB = local_partition(gB, tB, threadIdx.x);
+    // Tensor tBsB = local_partition(sB, tB, threadIdx.x);
 
-    Tensor tBgB = local_partition(gB, tB, threadIdx.x);
-    Tensor tBsB = local_partition(sB, tB, threadIdx.x);
+    // copy(tAgA(_,_), tAsA);
+    // copy(tBgB(_,_), tBsB);
 
-    copy(tAgA(_,_), tAsA);
-    copy(tBgB(_,_), tBsB);
+    // cp_async_fence();
+    // cp_async_wait<0>();
+    // __syncthreads(); 
 
-    cp_async_fence();
-    cp_async_wait<0>();
-    __syncthreads(); 
-
-    if (thread0()) {
-        print_tensor(sA); printf("\n");
-    }
-    __syncthreads();
+    // if (thread0()) {
+    //     print_tensor(sA); printf("\n");
+    // }
+    // __syncthreads();
 }
