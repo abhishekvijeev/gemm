@@ -5,15 +5,15 @@ This repository is a product of my efforts to systematically understand optimiza
 
 Each data-parallel algorithm, henceforth referred to as a "kernel", has been implemented in CUDA on account of its widespread adoption within the HPC community.
 
-## Build
+### Build
 
 ```
+git clone https://github.com/abhishekvijeev/gemm.git
+cd gemm
 git submodule update --init --recursive
-
 mkdir build
 cd build
-cmake ../
-cmake --build .
+cmake .. && cmake --build .
 ```
 
 Details about command line parameters can be obtained with `--help`
