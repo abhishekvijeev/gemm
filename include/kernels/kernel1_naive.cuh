@@ -1,7 +1,7 @@
 /*
  * Threads with consecutive thread IDs within a thread block belong to a warp,
  * whose threads execute the same instruction in lock-step (SIMD).
- * (where threadID = tid.y * blockDim. + tid.x)
+ * (where threadID = tid.y * blockDim.x + tid.x)
  * As of this writing, Nvidia GPUs group 32 threads into a warp.
  *
  * Points to remember about global memory accesses:
