@@ -1,5 +1,3 @@
-#include <cstdio>
-
 /*
  * In kernels 1 and 2, work was parallelized across threads at the
  * finest granularity i.e., each thread was responsible for computing
