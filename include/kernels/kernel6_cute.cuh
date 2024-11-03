@@ -24,18 +24,35 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
     auto gC = local_tile(gmem_c, tile_shape_c, make_coord(blockIdx.y, blockIdx.x));
     auto num_tiles = size<2>(gA);
 
+    // if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1 && blockIdx.y == 1) {
+    //     printf("Block x = %d, y = %d\n\n", blockIdx.x, blockIdx.y);
+    //     print_tensor(gA); printf("\n\n");
+    // }
+
     // Create shared memory tensors
     Tensor sA = make_tensor(make_smem_ptr(shared_a), tile_shape_a, make_stride(BLOCK_TILE_K, 1));
     Tensor sB = make_tensor(make_smem_ptr(shared_b), tile_shape_b, make_stride(BLOCK_TILE_N, 1));
 
-    // Partition the tile's elements across all threads in the threadblock
-    auto tA = make_layout(make_shape(1, 1));
-    Tensor tAgA = local_partition(gA, tA, threadIdx.x);
-    Tensor tAsA = local_partition(sA, tA, threadIdx.x);
+    // Define thread layouts
+    // 
+    //  - If tile size dimensions are smaller than those of the threadblocks,
+    //  we define the thread layouts with these dimensions to avoid illegal
+    //  memory accesses by the threadblock's extra threads
+    // 
+    //  - Else, we just use the threadblock's dimensions
+    // auto tA = make_layout(make_shape(min(get<0>(tile_shape_a), blockDim.y), min(get<1>(tile_shape_a), blockDim.x)), LayoutRight{});
+    // auto tB = make_layout(make_shape(min(get<0>(tile_shape_b), blockDim.y), min(get<1>(tile_shape_b), blockDim.x)));
+    // auto tC = make_layout(make_shape(min(get<0>(tile_shape_c), blockDim.y), min(get<1>(tile_shape_c), blockDim.x)));
 
-    if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1 && blockIdx.y == 1) {
-        printf("Block x = %d, y = %d\n\n", blockIdx.x, blockIdx.y);
-        print_tensor(gC); printf("\n\n");
+    auto tA = make_layout(make_shape(4, 4), LayoutRight{});
+
+    // Partition the tile's elements across all threads in the threadblock
+    Tensor tAgA = outer_partition(gA, tA, make_coord(blockIdx.y, _));
+    Tensor tAsA = local_partition(sA, tA, threadIdx.y);
+
+    // if (thread0()) {
+    if (threadIdx.x == 1 && threadIdx.y == 1 && blockIdx.x == 0 && blockIdx.y == 0) {
+        print_tensor(tAgA); printf("\n\n");
     }
 
     for (int tile_idx = 0; tile_idx < num_tiles; tile_idx++)
@@ -51,12 +68,12 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
         cp_async_wait<0>();
         __syncthreads();
 
-        // if (thread0()) {
-        // if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1 && blockIdx.y == 0) {
-        //     printf("Tile A%d:\n", tile_idx);
-        //     print_tensor(sA); printf("\n");
-        // }
-        // __syncthreads();
+        if (thread0()) {
+        // if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0 && blockIdx.y == 1) {
+            printf("Tile A%d:\n", tile_idx);
+            print_tensor(sA); printf("\n");
+        }
+        __syncthreads();
     }
 
     
