@@ -19,9 +19,9 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
     auto tile_shape_c = make_shape(BLOCK_TILE_M, BLOCK_TILE_N);
 
     // Partition global memory into tiles
-    auto gA = local_tile(gmem_a, tile_shape_a, make_coord(blockIdx.x, _));
-    auto gB = local_tile(gmem_b, tile_shape_b, make_coord(_, blockIdx.y));
-    auto gC = local_tile(gmem_c, tile_shape_c, make_coord(blockIdx.x, blockIdx.y));
+    auto gA = local_tile(gmem_a, tile_shape_a, make_coord(blockIdx.y, _));
+    auto gB = local_tile(gmem_b, tile_shape_b, make_coord(_, blockIdx.x));
+    auto gC = local_tile(gmem_c, tile_shape_c, make_coord(blockIdx.y, blockIdx.x));
     auto num_tiles = size<2>(gA);
 
     // Create shared memory tensors
@@ -29,31 +29,34 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
     Tensor sB = make_tensor(make_smem_ptr(shared_b), tile_shape_b, make_stride(BLOCK_TILE_N, 1));
 
     // Partition the tile's elements across all threads in the threadblock
-    auto tA = make_layout(make_shape(blockDim.x, blockDim.y), LayoutRight{});
-    auto tB = make_layout(make_shape(blockDim.x, blockDim.y), LayoutRight{});
+    auto tA = make_layout(make_shape(1, 1));
     Tensor tAgA = local_partition(gA, tA, threadIdx.x);
-    Tensor tBgB = local_partition(gB, tB, threadIdx.x);
+    Tensor tAsA = local_partition(sA, tA, threadIdx.x);
 
-    if (thread0()) {
-        print_tensor(sA); printf("\n");
-        // print(tA); printf("\n\n");
-        // print(tAgA); printf("\n\n");
+    if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1 && blockIdx.y == 1) {
+        printf("Block x = %d, y = %d\n\n", blockIdx.x, blockIdx.y);
+        print_tensor(gC); printf("\n\n");
     }
 
     for (int tile_idx = 0; tile_idx < num_tiles; tile_idx++)
     {
-        if (thread0()) {
-            Tensor gA_tile = gA(_,_,tile_idx);  // (BLK_M,BLK_K), the ith tile
-            for (int i = 0; i < size(sA); ++i) {
-                sA(i) = gA_tile(i);
-            }
-        }
+        // if (thread0()) {
+        //     printf("Tile A%d Before Copy:\n", tile_idx);
+        //     print_tensor(sA); printf("\n");
+        // }
+        // __syncthreads();
 
+        copy(tAgA(_,_,tile_idx), tAsA);
+        cp_async_fence();
+        cp_async_wait<0>();
         __syncthreads();
 
-        if (thread0()) {
-            print_tensor(sA); printf("\n");
-        }
+        // if (thread0()) {
+        // if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1 && blockIdx.y == 0) {
+        //     printf("Tile A%d:\n", tile_idx);
+        //     print_tensor(sA); printf("\n");
+        // }
+        // __syncthreads();
     }
 
     

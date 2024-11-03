@@ -5,7 +5,7 @@ project(SGEMM)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
 set(CUBLAS_LIBRARIES -lcublas)
-set(CMAKE_CUDA_ARCHITECTURES "80")
+set(CMAKE_CUDA_ARCHITECTURES "90")
 
 enable_language(CUDA)
 
@@ -13,7 +13,7 @@ add_executable(main
     src/main.cu
     src/runner.cu
 )
-set_target_properties(main PROPERTIES CUDA_ARCHITECTURES "80")
+set_target_properties(main PROPERTIES CUDA_ARCHITECTURES "90")
 target_include_directories(main PUBLIC
     ./include
     ./cutlass/include
