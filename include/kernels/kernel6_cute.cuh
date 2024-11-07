@@ -14,9 +14,9 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
     Tensor gmem_c = make_tensor(make_gmem_ptr(C), make_shape(DIM, DIM), make_stride(DIM, 1));
 
     // Define tile sizes
-    auto tile_shape_a = make_shape(BLOCK_TILE_M, BLOCK_TILE_K);
-    auto tile_shape_b = make_shape(BLOCK_TILE_K, BLOCK_TILE_N);
-    auto tile_shape_c = make_shape(BLOCK_TILE_M, BLOCK_TILE_N);
+    auto tile_shape_a = make_shape(Int<BLOCK_TILE_M>{}, Int<BLOCK_TILE_K>{});
+    auto tile_shape_b = make_shape(Int<BLOCK_TILE_K>{}, Int<BLOCK_TILE_N>{});
+    auto tile_shape_c = make_shape(Int<BLOCK_TILE_M>{}, Int<BLOCK_TILE_N>{});
 
     // Partition global memory into tiles
     auto gA = local_tile(gmem_a, tile_shape_a, make_coord(blockIdx.y, _));
@@ -44,16 +44,17 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
     // auto tB = make_layout(make_shape(min(get<0>(tile_shape_b), blockDim.y), min(get<1>(tile_shape_b), blockDim.x)));
     // auto tC = make_layout(make_shape(min(get<0>(tile_shape_c), blockDim.y), min(get<1>(tile_shape_c), blockDim.x)));
 
-    auto tA = make_layout(make_shape(4, 4), LayoutRight{});
+    auto tA = make_layout(make_shape(Int<1>{}, Int<1>{}), LayoutRight{});
 
     // Partition the tile's elements across all threads in the threadblock
-    Tensor tAgA = outer_partition(gA, tA, make_coord(blockIdx.y, _));
-    Tensor tAsA = local_partition(sA, tA, threadIdx.y);
+    // Tensor tAgA = outer_partition(gA, tA, make_coord(blockIdx.y, _));
+    Tensor tAgA = local_partition(gA, tA, threadIdx.x);
+    Tensor tAsA = local_partition(sA, tA, threadIdx.x);
 
     // if (thread0()) {
-    if (threadIdx.x == 1 && threadIdx.y == 1 && blockIdx.x == 0 && blockIdx.y == 0) {
-        print_tensor(tAgA); printf("\n\n");
-    }
+    // if (threadIdx.x == 1 && threadIdx.y == 1 && blockIdx.x == 0 && blockIdx.y == 0) {
+    //     print_tensor(tAgA); printf("\n\n");
+    // }
 
     for (int tile_idx = 0; tile_idx < num_tiles; tile_idx++)
     {
@@ -68,8 +69,8 @@ __global__ void kernel6_cute(float *A, float *B, float *C, int DIM, float alpha,
         cp_async_wait<0>();
         __syncthreads();
 
-        if (thread0()) {
-        // if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0 && blockIdx.y == 1) {
+        // if (thread0()) {
+        if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1 && blockIdx.y == 1) {
             printf("Tile A%d:\n", tile_idx);
             print_tensor(sA); printf("\n");
         }

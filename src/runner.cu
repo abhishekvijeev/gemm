@@ -168,23 +168,22 @@ void run_gemm_cute(
     float beta
 )
 {
-    // const int THREADBLOCK_TILE_M = 128;
-    // const int THREADBLOCK_TILE_N = 128;
-    // const int THREADBLOCK_TILE_K = 8;
-
     const int THREADBLOCK_TILE_M = 4;
     const int THREADBLOCK_TILE_N = 4;
     const int THREADBLOCK_TILE_K = 4;
 
-    const int THREADBLOCK_DIM_X = 16;
-    const int THREADBLOCK_DIM_Y = 16;
+    const int THREADBLOCK_DIM_X = 4;
+    const int THREADBLOCK_DIM_Y = 4;
 
     const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
     const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
 
+    printf("GRID_DIM_Y: %d\n", GRID_DIM_Y);
+    printf("GRID_DIM_X: %d\n", GRID_DIM_X);
+
     dim3 block_dim(THREADBLOCK_DIM_Y, THREADBLOCK_DIM_X);
-    // dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
-    dim3 grid_dim(2, 2);
+    dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
+
     kernel6_cute
         <THREADBLOCK_TILE_M, THREADBLOCK_TILE_N, THREADBLOCK_TILE_K>
         <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
