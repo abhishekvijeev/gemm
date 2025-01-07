@@ -138,7 +138,7 @@ int main(int argc, const char **argv)
     C_expt.sync_host();
 
     // Discard first iteration
-    // run_kernel(KERNEL, &prop, A.device_data(), B.device_data(), C_expt.device_data(), DIM, ALPHA, BETA);
+    run_kernel(KERNEL, &prop, A.device_data(), B.device_data(), C_expt.device_data(), DIM, ALPHA, BETA);
     C_expt.sync_host();
 
     timer.start();
@@ -177,8 +177,8 @@ int main(int argc, const char **argv)
     C_reference.sync_host();
     printf("Ref: %.2f GFlops/s\n", (ITERATIONS * flops * 1e-9) / ref_time_s);
 
-    std::cout << "A:"  << std::endl << std::endl;
-    std::cout << A.host_view() << std::endl << std::endl;
+    // std::cout << "A:"  << std::endl << std::endl;
+    // std::cout << A.host_view() << std::endl << std::endl;
 
     // std::cout << "B:"  << std::endl << std::endl;
     // std::cout << B.host_view() << std::endl << std::endl;
