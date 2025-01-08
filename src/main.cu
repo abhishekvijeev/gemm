@@ -56,9 +56,13 @@ void run_kernel(
         case 6:
             run_gemm_cute(A, B, C, dim, alpha, beta);
             break;
+        
+        case 7:
+            run_gemm_warptile(A, B, C, dim, alpha, beta);
+            break;
 
         default:
-            printf("Invalid kernel number - [1-6] allowed\n");
+            printf("Invalid kernel number - [1-7] allowed\n");
             break;
     }
 }

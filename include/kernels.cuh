@@ -6,3 +6,4 @@
 #include <kernels/kernel4_thread_coarsen_v2.cuh>
 #include <kernels/kernel5_vectorize.cuh>
 #include <kernels/kernel6_cute.cuh>
+#include <kernels/kernel7_warptile.cuh>

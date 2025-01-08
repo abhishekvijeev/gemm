@@ -189,3 +189,38 @@ void run_gemm_cute(
         <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }
+
+void run_gemm_warptile(
+    float *A,
+    float *B,
+    float *C, 
+    int DIM,
+    float alpha,
+    float beta
+)
+{
+    const int THREAD_TILE_M = 4;
+    const int THREAD_TILE_N = 4;
+
+    const int THREADBLOCK_TILE_M = 64;
+    const int THREADBLOCK_TILE_N = 64;
+    const int THREADBLOCK_TILE_K = 64;
+
+    const int THREADBLOCK_DIM_X = THREADBLOCK_TILE_N / THREAD_TILE_N;
+    const int THREADBLOCK_DIM_Y = THREADBLOCK_TILE_M / THREAD_TILE_M;
+    const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
+    const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
+
+    dim3 block_dim(THREADBLOCK_DIM_Y, THREADBLOCK_DIM_X);
+    dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
+
+    // printf("grid_dim.x: %d\n", grid_dim.x);
+    // printf("grid_dim.y: %d\n", grid_dim.y);
+    // printf("block_dim.x: %d\n", block_dim.x);
+    // printf("block_dim.y: %d\n", block_dim.y);
+
+    kernel7_warptile
+        <THREADBLOCK_TILE_M, THREADBLOCK_TILE_N, THREADBLOCK_TILE_K, THREAD_TILE_M, THREAD_TILE_N>
+        <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
+    CUDA_CHECK(cudaGetLastError());
+}

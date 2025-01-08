@@ -52,3 +52,12 @@ void run_gemm_cute(
     float alpha,
     float beta
 );
+
+void run_gemm_warptile(
+    float *A,
+    float *B,
+    float *C, 
+    int DIM,
+    float alpha,
+    float beta
+);
