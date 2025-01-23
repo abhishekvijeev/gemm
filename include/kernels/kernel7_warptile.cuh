@@ -96,11 +96,11 @@ __global__ void kernel7_warptile(float *A, float *B, float *C, int DIM, float al
         // }
 
         #pragma unroll
-        for (int i = 0; i < THREAD_TILE_M; i++) {
+        for (int k = 0; k < BLOCK_TILE_K; k++) {
             #pragma unroll
-            for (int j = 0; j < THREAD_TILE_N; j++) {
+            for (int i = 0; i < THREAD_TILE_M; i++) {
                 #pragma unroll
-                for (int k = 0; k < BLOCK_TILE_K; k++) {
+                for (int j = 0; j < THREAD_TILE_N; j++) {
                     sum[i][j] +=
                         ATile[(tidy * THREAD_TILE_M) + i][k] * 
                         BTile[k][(tidx * THREAD_TILE_N) + j];
