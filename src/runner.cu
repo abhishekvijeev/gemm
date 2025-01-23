@@ -94,16 +94,16 @@ void run_gemm_thread_coarsen_v2(
     const int THREAD_TILE_M = 4;
     const int THREAD_TILE_N = 4;
 
-    const int THREADBLOCK_TILE_M = 64;
-    const int THREADBLOCK_TILE_N = 64;
-    const int THREADBLOCK_TILE_K = 64;
+    const int BLOCK_TILE_M = 64;
+    const int BLOCK_TILE_N = 64;
+    const int BLOCK_TILE_K = 64;
 
-    const int THREADBLOCK_DIM_X = THREADBLOCK_TILE_N / THREAD_TILE_N;
-    const int THREADBLOCK_DIM_Y = THREADBLOCK_TILE_M / THREAD_TILE_M;
-    const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
-    const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
+    const int BLOCK_DIM_X = BLOCK_TILE_N / THREAD_TILE_N;
+    const int BLOCK_DIM_Y = BLOCK_TILE_M / THREAD_TILE_M;
+    const int GRID_DIM_X = DIM / BLOCK_TILE_N;
+    const int GRID_DIM_Y = DIM / BLOCK_TILE_M;
 
-    dim3 block_dim(THREADBLOCK_DIM_Y, THREADBLOCK_DIM_X);
+    dim3 block_dim(BLOCK_DIM_Y, BLOCK_DIM_X);
     dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
 
     // printf("grid_dim.x: %d\n", grid_dim.x);
@@ -112,7 +112,7 @@ void run_gemm_thread_coarsen_v2(
     // printf("block_dim.y: %d\n", block_dim.y);
 
     kernel4_thread_coarsen_v2
-        <THREADBLOCK_TILE_M, THREADBLOCK_TILE_N, THREADBLOCK_TILE_K, THREAD_TILE_M, THREAD_TILE_N>
+        <BLOCK_TILE_M, BLOCK_TILE_N, BLOCK_TILE_K, THREAD_TILE_M, THREAD_TILE_N>
         <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }
@@ -129,23 +129,23 @@ void run_gemm_vectorize(
     // const int THREAD_TILE_M = 2;
     // const int THREAD_TILE_N = 2;
 
-    // const int THREADBLOCK_TILE_M = 4;
-    // const int THREADBLOCK_TILE_N = 4;
-    // const int THREADBLOCK_TILE_K = 4;
+    // const int BLOCK_TILE_M = 4;
+    // const int BLOCK_TILE_N = 4;
+    // const int BLOCK_TILE_K = 4;
 
     const int THREAD_TILE_M = 4;
     const int THREAD_TILE_N = 4;
 
-    const int THREADBLOCK_TILE_M = 64;
-    const int THREADBLOCK_TILE_N = 64;
-    const int THREADBLOCK_TILE_K = 64;
+    const int BLOCK_TILE_M = 64;
+    const int BLOCK_TILE_N = 64;
+    const int BLOCK_TILE_K = 64;
 
-    const int THREADBLOCK_DIM_X = THREADBLOCK_TILE_N / THREAD_TILE_N;
-    const int THREADBLOCK_DIM_Y = THREADBLOCK_TILE_M / THREAD_TILE_M;
-    const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
-    const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
+    const int BLOCK_DIM_X = BLOCK_TILE_N / THREAD_TILE_N;
+    const int BLOCK_DIM_Y = BLOCK_TILE_M / THREAD_TILE_M;
+    const int GRID_DIM_X = DIM / BLOCK_TILE_N;
+    const int GRID_DIM_Y = DIM / BLOCK_TILE_M;
 
-    dim3 block_dim(THREADBLOCK_DIM_Y, THREADBLOCK_DIM_X);
+    dim3 block_dim(BLOCK_DIM_Y, BLOCK_DIM_X);
     dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
 
     // printf("grid_dim.x: %d\n", grid_dim.x);
@@ -154,7 +154,7 @@ void run_gemm_vectorize(
     // printf("block_dim.y: %d\n", block_dim.y);
 
     kernel5_vectorize
-        <THREADBLOCK_TILE_M, THREADBLOCK_TILE_N, THREADBLOCK_TILE_K, THREAD_TILE_M, THREAD_TILE_N>
+        <BLOCK_TILE_M, BLOCK_TILE_N, BLOCK_TILE_K, THREAD_TILE_M, THREAD_TILE_N>
         <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }
@@ -168,24 +168,24 @@ void run_gemm_cute(
     float beta
 )
 {
-    const int THREADBLOCK_TILE_M = 4;
-    const int THREADBLOCK_TILE_N = 4;
-    const int THREADBLOCK_TILE_K = 4;
+    const int BLOCK_TILE_M = 4;
+    const int BLOCK_TILE_N = 4;
+    const int BLOCK_TILE_K = 4;
 
-    const int THREADBLOCK_DIM_X = 4;
-    const int THREADBLOCK_DIM_Y = 4;
+    const int BLOCK_DIM_X = 4;
+    const int BLOCK_DIM_Y = 4;
 
-    const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
-    const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
+    const int GRID_DIM_X = DIM / BLOCK_TILE_N;
+    const int GRID_DIM_Y = DIM / BLOCK_TILE_M;
 
     printf("GRID_DIM_Y: %d\n", GRID_DIM_Y);
     printf("GRID_DIM_X: %d\n", GRID_DIM_X);
 
-    dim3 block_dim(THREADBLOCK_DIM_Y, THREADBLOCK_DIM_X);
+    dim3 block_dim(BLOCK_DIM_Y, BLOCK_DIM_X);
     dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
 
     kernel6_cute
-        <THREADBLOCK_TILE_M, THREADBLOCK_TILE_N, THREADBLOCK_TILE_K>
+        <BLOCK_TILE_M, BLOCK_TILE_N, BLOCK_TILE_K>
         <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }
@@ -199,19 +199,37 @@ void run_gemm_warptile(
     float beta
 )
 {
-    const int THREAD_TILE_M = 4;
-    const int THREAD_TILE_N = 4;
+    // A threadblock computes a BLOCK_TILE_M * BLOCK_TILE_N tile of C
+    const int BLOCK_TILE_M = 128;
+    const int BLOCK_TILE_N = 128;
+    const int BLOCK_TILE_K = 16;
 
-    const int THREADBLOCK_TILE_M = 64;
-    const int THREADBLOCK_TILE_N = 64;
-    const int THREADBLOCK_TILE_K = 64;
+    // A warp computes a WARP_TILE_M * WARP_TILE_N tile of C
+    const int WARP_TILE_M = 64;
+    const int WARP_TILE_N = 32;
 
-    const int THREADBLOCK_DIM_X = THREADBLOCK_TILE_N / THREAD_TILE_N;
-    const int THREADBLOCK_DIM_Y = THREADBLOCK_TILE_M / THREAD_TILE_M;
-    const int GRID_DIM_X = DIM / THREADBLOCK_TILE_N;
-    const int GRID_DIM_Y = DIM / THREADBLOCK_TILE_M;
+    // A thread computes a THREAD_TILE_M * THREAD_TILE_N tile of C
+    const int THREAD_TILE_M = 8;
+    const int THREAD_TILE_N = 8;
 
-    dim3 block_dim(THREADBLOCK_DIM_Y, THREADBLOCK_DIM_X);
+    // Number of threads along each warp dimension
+    const int WARP_DIM_X = WARP_TILE_N / THREAD_TILE_N;
+    const int WARP_DIM_Y = WARP_TILE_M / THREAD_TILE_M;
+    static_assert((WARP_DIM_X * WARP_DIM_Y) == 32);
+
+    // Number of warps along each threadblock dimension
+    const int NUM_WARPS_X = BLOCK_TILE_N / WARP_TILE_N;
+    const int NUM_WARPS_Y = BLOCK_TILE_M / WARP_TILE_M;
+
+    // Threadblock dimensions
+    const int BLOCK_DIM_X = WARP_DIM_X * NUM_WARPS_X;
+    const int BLOCK_DIM_Y = WARP_DIM_Y * NUM_WARPS_Y;
+
+    // Grid dimensions
+    const int GRID_DIM_X = DIM / BLOCK_TILE_N;
+    const int GRID_DIM_Y = DIM / BLOCK_TILE_M;
+
+    dim3 block_dim(BLOCK_DIM_Y, BLOCK_DIM_X);
     dim3 grid_dim(GRID_DIM_Y, GRID_DIM_X);
 
     // printf("grid_dim.x: %d\n", grid_dim.x);
@@ -220,7 +238,7 @@ void run_gemm_warptile(
     // printf("block_dim.y: %d\n", block_dim.y);
 
     kernel7_warptile
-        <THREADBLOCK_TILE_M, THREADBLOCK_TILE_N, THREADBLOCK_TILE_K, THREAD_TILE_M, THREAD_TILE_N>
+        <BLOCK_TILE_M, BLOCK_TILE_N, BLOCK_TILE_K, WARP_TILE_M, WARP_TILE_N, THREAD_TILE_M, THREAD_TILE_N>
         <<<grid_dim, block_dim>>>(A, B, C, DIM, alpha, beta);
     CUDA_CHECK(cudaGetLastError());
 }
