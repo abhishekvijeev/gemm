@@ -212,6 +212,14 @@ void run_gemm_warptile(
     const int THREAD_TILE_M = 8;
     const int THREAD_TILE_N = 8;
 
+    /* 
+     * Invariant that must be maintained:
+     * (WARP_TILE_M / THREAD_TILE_M) * (WARP_TILE_N / THREAD_TILE_N) = 32
+     *
+     * Three of these tile sizes should be fixed - the last one must
+     * be calculated using the above equation.
+     */
+
     // Number of threads along each warp dimension
     const int WARP_DIM_X = WARP_TILE_N / THREAD_TILE_N;
     const int WARP_DIM_Y = WARP_TILE_M / THREAD_TILE_M;

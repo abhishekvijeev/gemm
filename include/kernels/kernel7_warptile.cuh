@@ -4,6 +4,78 @@ __global__ void kernel7_warptile(float *A, float *B, float *C, int DIM, float al
     int tidx = threadIdx.x, tidy = threadIdx.y;
     int bidx = blockIdx.x, bidy = blockIdx.y;
 
+    /*  
+        Thread block tile:
+
+                  <----------------- BLOCK_TILE_N --------------->
+
+          ↑       +-----------+-----------+-----------+----------+
+          |       |WARP_IDX=0 |WARP_IDX=1 |WARP_IDX=2 |WARP_IDX=3|
+          |       |WARP_X=0   |WARP_X=1   |WARP_X=2   |WARP_X=3  |
+          |       |WARP_Y=0   |WARP_Y=0   |WARP_Y=0   |WARP_Y=0  |
+    BLOCK_TILE_M  +-----------+-----------+-----------+----------+
+          |       |WARP_IDX=4 |WARP_IDX=5 |WARP_IDX=6 |WARP_IDX=7|
+          |       |WARP_X=0   |WARP_X=1   |WARP_X=2   |WARP_X=3  |
+          |       |WARP_Y=1   |WARP_Y=1   |WARP_Y=1   |WARP_Y=1  |
+          ↓       +-----------+-----------+-----------+----------+
+    */
+    constexpr int NUM_WARPS_X = BLOCK_TILE_N / WARP_TILE_N;
+    constexpr int NUM_WARPS_Y = BLOCK_TILE_M / WARP_TILE_M;
+
+    const int THREAD_IDX = tidy * blockDim.x + tidx;
+    const int WARP_IDX = THREAD_IDX / 32;
+    const int WARP_X = WARP_IDX % NUM_WARPS_X;
+    const int WARP_Y = WARP_IDX / NUM_WARPS_X;
+
+    /*
+        Warp tile:
+
+                            WARP_TILE_N
+                      <-- matrix elements -->
+                
+           ↑          +---------------------+           ↑
+           |          |                     |           |
+           |          |                     |           |
+           |          |                     |           |
+      WARP_TILE_M     |                     |       WARP_DIM_Y
+    matrix elements   |                     |        threads
+           |          |                     |           |
+           |          |                     |           |
+           |          |                     |           |
+           ↓          +---------------------+           ↓
+
+                      <----- WARP_DIM_X ---->
+                              threads
+    */
+    constexpr int WARP_DIM_X = WARP_TILE_N / THREAD_TILE_N;
+    constexpr int WARP_DIM_Y = WARP_TILE_M / THREAD_TILE_M;
+    const int THREAD_X_IN_WARP = (THREAD_IDX % 32) % WARP_DIM_X;
+    const int THREAD_Y_IN_WARP = (THREAD_IDX % 32) / WARP_DIM_X;
+
+    // Each thread could be responsible for the computation of multiple
+    // output tiles depending on the warp tile and thread tile sizes
+    // 
+    // For example, let WARP_TILE_M = 64, WARP_TILE_N = 32,
+    // THREAD_TILE_M = 8 and THREAD_TILE_N = 8
+    //      => WARP_DIM_X = 32 / 8 = 4
+    //      => WARP_DIM_Y = 64 / 8 = 8
+    //
+    // Along the 'M' dimension, we have 64 matrix elements and 8
+    // threads, each of which is responsible for 8 elemets. Therefore, 
+    // the number of tiles that an individual thread is responsible
+    // along the 'M' dimension is: 64 / (8 * 8) = 1
+    // 
+    // Similarly, along the 'N' dimension, we have 32 matrix elements
+    // and 4 threads, each of which is responsible for 8 elements.
+    // Therefore, the number of tiles that an individual thread is
+    // responsible for along the 'N' dimension is: 32 / (4 * 8) = 1
+    constexpr int NUM_THREAD_TILES_PER_WARP_TILE_M = WARP_TILE_M / (WARP_DIM_Y * THREAD_TILE_M);
+    constexpr int NUM_THREAD_TILES_PER_WARP_TILE_N = WARP_TILE_N / (WARP_DIM_X * THREAD_TILE_N);
+
+    float a_reg[NUM_THREAD_TILES_PER_WARP_TILE_M][THREAD_TILE_M] = {0};
+    float b_reg[NUM_THREAD_TILES_PER_WARP_TILE_N][THREAD_TILE_N] = {0};
+    float c_reg[NUM_THREAD_TILES_PER_WARP_TILE_M][NUM_THREAD_TILES_PER_WARP_TILE_N][THREAD_TILE_M][THREAD_TILE_N] = {0};
+
     // equivalent to (bidy * blockDim.y * THREAD_TILE_M)
     int cRowStart = bidy * BLOCK_TILE_M;
 
@@ -29,7 +101,7 @@ __global__ void kernel7_warptile(float *A, float *B, float *C, int DIM, float al
         #pragma unroll
         for (int i = 0; i < THREAD_TILE_M; i++) {
             #pragma unroll
-            for (int j = 0; j < THREAD_TILE_N; j += 4) {
+            for (int j = 0; j < THREAD_TILE_N; j++) {
                 int ATileRow = (tidy * THREAD_TILE_M) + i;
                 int ATileCol = (tidx * THREAD_TILE_N) + j;
                 int ARow = (cRowStart + tidy * THREAD_TILE_M + i);
@@ -40,20 +112,10 @@ __global__ void kernel7_warptile(float *A, float *B, float *C, int DIM, float al
                 int BRow = (phase * BLOCK_TILE_K + tidy * THREAD_TILE_N + i);
                 int BCol = (cColStart + tidx * THREAD_TILE_M + j);
 
-                if (tidx * THREAD_TILE_N < BLOCK_TILE_K) {
-                    float4 AVec = *reinterpret_cast<float4 *>(&A[ARow * DIM + ACol]);
-                    ATile[ATileRow][ATileCol + 0] = AVec.x;
-                    ATile[ATileRow][ATileCol + 1] = AVec.y;
-                    ATile[ATileRow][ATileCol + 2] = AVec.z;
-                    ATile[ATileRow][ATileCol + 3] = AVec.w;
-                }
-                if (tidy * THREAD_TILE_M < BLOCK_TILE_K) {
-                    float4 BVec = *reinterpret_cast<float4 *>(&B[BRow * DIM + BCol]);
-                    BTile[BTileRow][BTileCol + 0] = BVec.x;
-                    BTile[BTileRow][BTileCol + 1] = BVec.y;
-                    BTile[BTileRow][BTileCol + 2] = BVec.z;
-                    BTile[BTileRow][BTileCol + 3] = BVec.w;
-                }
+                if (tidx * THREAD_TILE_N < BLOCK_TILE_K)
+                    ATile[ATileRow][ATileCol] = A[ARow * DIM + ACol];
+                if (tidy * THREAD_TILE_M < BLOCK_TILE_K)
+                    BTile[BTileRow][BTileCol] = B[BRow * DIM + BCol];
             }
         }
         __syncthreads();
@@ -76,15 +138,10 @@ __global__ void kernel7_warptile(float *A, float *B, float *C, int DIM, float al
     #pragma unroll
     for (int i = 0; i < THREAD_TILE_M; i++) {
         #pragma unroll
-        for (int j = 0; j < THREAD_TILE_N; j += 4) {
+        for (int j = 0; j < THREAD_TILE_N; j++) {
             int cRow = (cRowStart + tidy * THREAD_TILE_M + i);
             int cCol = (cColStart + tidx * THREAD_TILE_N + j);
-            float4 CVec;
-            CVec.x = sum[i][j];
-            CVec.y = sum[i][j + 1];
-            CVec.z = sum[i][j + 2];
-            CVec.w = sum[i][j + 3];
-            *reinterpret_cast<float4 *>(&C[cRow * DIM + cCol]) = CVec;
+            C[cRow * DIM + cCol] = sum[i][j];
         }
     }
 
